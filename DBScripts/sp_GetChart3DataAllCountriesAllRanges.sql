@@ -1,4 +1,4 @@
-Create PROCEDURE [dbo].[sp_GetChart3DataAllCountriesAllRanges]
+CREATE PROCEDURE [dbo].[sp_GetChart3DataAllCountriesAllRanges]
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -11,8 +11,8 @@ BEGIN
             [ACTION_TITLE],
             [COLUMN_1_3_1_TOTAL_AMOUNT],
             CASE 
-                WHEN ISNUMERIC([GLOBAL_INDIRECT_MANAGEMENT_AMOUNT]) = 1 
-                THEN CONVERT(DECIMAL(18,2), [GLOBAL_INDIRECT_MANAGEMENT_AMOUNT])
+                WHEN ISNUMERIC(REPLACE([GLOBAL_INDIRECT_MANAGEMENT_AMOUNT], ' ', '')) = 1 
+                THEN CONVERT(DECIMAL(18,2), REPLACE([GLOBAL_INDIRECT_MANAGEMENT_AMOUNT], ' ', ''))
                 ELSE 0.00 
             END AS IndirectAmount_Clean
         FROM [PROJECTS]
@@ -27,8 +27,8 @@ BEGIN
             [ACTION_TITLE],
             [COLUMN_1_3_1_TOTAL_AMOUNT],
             CASE 
-                WHEN ISNUMERIC([GLOBAL_INDIRECT_MANAGEMENT_AMOUNT]) = 1 
-                THEN CONVERT(DECIMAL(18,2), [GLOBAL_INDIRECT_MANAGEMENT_AMOUNT])
+                WHEN ISNUMERIC(REPLACE([GLOBAL_INDIRECT_MANAGEMENT_AMOUNT], ' ', '')) = 1 
+                THEN CONVERT(DECIMAL(18,2), REPLACE([GLOBAL_INDIRECT_MANAGEMENT_AMOUNT], ' ', ''))
                 ELSE 0.00 
             END AS IndirectAmount_Clean
         FROM [PROJECTS]
@@ -43,8 +43,8 @@ BEGIN
             [ACTION_TITLE],
             [COLUMN_1_3_1_TOTAL_AMOUNT],
             CASE 
-                WHEN ISNUMERIC([GLOBAL_INDIRECT_MANAGEMENT_AMOUNT]) = 1 
-                THEN CONVERT(DECIMAL(18,2), [GLOBAL_INDIRECT_MANAGEMENT_AMOUNT])
+                WHEN ISNUMERIC(REPLACE([GLOBAL_INDIRECT_MANAGEMENT_AMOUNT], ' ', '')) = 1 
+                THEN CONVERT(DECIMAL(18,2), REPLACE([GLOBAL_INDIRECT_MANAGEMENT_AMOUNT], ' ', ''))
                 ELSE 0.00 
             END AS IndirectAmount_Clean
         FROM [PROJECTS]

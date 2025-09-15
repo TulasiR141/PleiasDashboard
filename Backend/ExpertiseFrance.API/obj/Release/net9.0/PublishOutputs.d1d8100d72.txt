@@ -1,4 +1,5 @@
 C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\ExpertiseFrance.API.exe
+C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\publish\publish\publish\web.config
 C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\publish\publish\web.config
 C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\publish\web.config
 C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\appsettings.Development.json
@@ -16,6 +17,12 @@ C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\publish\p
 C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\publish\publish\ExpertiseFrance.API.deps.json
 C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\publish\publish\ExpertiseFrance.API.runtimeconfig.json
 C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\publish\publish\ExpertiseFrance.API.staticwebassets.endpoints.json
+C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\publish\publish\publish\appsettings.Development.json
+C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\publish\publish\publish\appsettings.json
+C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\publish\publish\publish\appsettings.Production.json
+C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\publish\publish\publish\ExpertiseFrance.API.deps.json
+C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\publish\publish\publish\ExpertiseFrance.API.runtimeconfig.json
+C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\publish\publish\publish\ExpertiseFrance.API.staticwebassets.endpoints.json
 C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\ExpertiseFrance.API.dll
 C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\ExpertiseFrance.API.deps.json
 C:\Users\tulas\Documents\Dashboard\Backend\ExpertiseFrance.API\publish\ExpertiseFrance.API.runtimeconfig.json

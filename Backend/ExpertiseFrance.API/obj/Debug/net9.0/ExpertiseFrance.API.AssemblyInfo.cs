@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ExpertiseFrance.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+10e1f296c3a0f46494ffdd4890651d9f9f0eee43")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b1ca6a636f11c3d564aef3abadd79da0ec455f21")]
 [assembly: System.Reflection.AssemblyProductAttribute("ExpertiseFrance.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ExpertiseFrance.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
