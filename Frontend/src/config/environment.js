@@ -11,8 +11,27 @@
   }
 };
 
+// Check for multiple possible environment variable names
+const getApiUrl = () => {
+  // Try VITE_API_URL (what we set in Azure)
+  const viteApiUrl = getEnvironmentVariable('VITE_API_URL', '');
+  if (viteApiUrl) return viteApiUrl;
+  
+  // Try VITE_API_BASE_URL (what was originally expected)
+  const viteApiBaseUrl = getEnvironmentVariable('VITE_API_BASE_URL', '');
+  if (viteApiBaseUrl) return viteApiBaseUrl;
+  
+  // Production fallback
+  if (import.meta.env.MODE === 'production') {
+    return 'https://dashboardbackend-gqatdbhef0gqbdea.eastus2-01.azurewebsites.net';
+  }
+  
+  // Development fallback
+  return 'http://localhost:5151';
+};
+
 export const config = {
-  apiBaseUrl: getEnvironmentVariable('VITE_API_BASE_URL', 'http://localhost:5151'),
+  apiBaseUrl: getApiUrl(),
   environment: getEnvironmentVariable('VITE_ENVIRONMENT', 'development'),
   debug: getEnvironmentVariable('VITE_DEBUG', 'false') === 'true',
   nodeEnv: getEnvironmentVariable('NODE_ENV', 'development')
