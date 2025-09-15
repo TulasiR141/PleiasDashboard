@@ -1,0 +1,535 @@
+/* =================================================================
+   FUNDING MANAGEMENT ANALYSIS - ORGANIZED CSS
+   ================================================================= */
+
+/* =================================================================
+   RESET & BASE STYLES
+   ================================================================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, 
+body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.funding-management-page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  width: 100vw;
+  overflow-x: hidden;
+}
+
+/* =================================================================
+   HEADER COMPONENTS
+   ================================================================= */
+.header {
+  background-color: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0;
+  width: 100vw;
+}
+
+.header-content {
+  max-width: none;
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  width: 100%;
+}
+
+/* Logo Section */
+.logo-section {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background-color: #1e40af;
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.logo-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Navigation */
+.navigation {
+  display: flex;
+  gap: 2rem;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #64748b;
+  font-weight: 500;
+  padding: 0.5rem 0;
+  position: relative;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.nav-link:hover {
+  color: #1e293b;
+}
+
+.nav-link.active {
+  color: #1e40af;
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1rem;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #1e40af;
+}
+
+/* =================================================================
+   PAGE LAYOUT
+   ================================================================= */
+.page-header-section {
+  padding: 2rem 3rem 0 3rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.main-content {
+  width: 100vw;
+  margin: 0;
+  padding: 2rem 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+  font-size: 1.125rem;
+  color: #64748b;
+}
+
+/* =================================================================
+   FILTERS SECTION
+   ================================================================= */
+.filters-container {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin: 0 3rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.filter-select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background-color: white;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23666" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 0.65rem auto;
+}
+
+.filter-select:hover {
+  border-color: #9ca3af;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-select:disabled {
+  background-color: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* =================================================================
+   CHARTS SECTION
+   ================================================================= */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 2rem;
+  margin: 0 0.5rem;
+}
+
+.countries-container {
+  grid-column: span 2;
+}
+
+.chart-container {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  min-height: 500px;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.chart-icon {
+  width: 48px;
+  height: 48px;
+  background-color: #dbeafe;
+  color: #3b82f6;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.chart-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0.25rem 0 0 0;
+}
+
+.chart-content {
+  width: 100%;
+}
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  color: #64748b;
+  font-style: italic;
+  font-size: 1rem;
+}
+
+.no-data {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  color: #6b7280;
+  font-style: italic;
+  font-size: 1rem;
+}
+
+/* =================================================================
+   AGENCIES GRID SECTION
+   ================================================================= */
+.agencies-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow-y: scroll;
+  margin-top: 1rem;
+}
+
+.agencies-header {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.agency-column-header {
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.agency-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s;
+}
+
+.agency-row:hover {
+  background-color: #f8fafc;
+}
+
+.agency-row:last-child {
+  border-bottom: none;
+}
+
+.agency-name {
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.4;
+}
+
+/* =================================================================
+   RECHARTS CUSTOMIZATION
+   ================================================================= */
+
+/* Tooltip Styles */
+.recharts-tooltip {
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  padding: 12px !important;
+}
+
+.recharts-tooltip .tooltip-label {
+  font-weight: 600 !important;
+  color: #1f2937 !important;
+  margin-bottom: 4px !important;
+  font-size: 0.875rem !important;
+}
+
+.recharts-tooltip p {
+  margin: 2px 0 !important;
+  font-size: 0.875rem !important;
+  color: #374151 !important;
+}
+
+/* Legend Styles */
+.recharts-legend-wrapper {
+  padding-bottom: 20px !important;
+}
+
+.recharts-legend-item {
+  margin-right: 20px !important;
+}
+
+.recharts-legend-item-text {
+  color: #374151 !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+}
+
+/* Chart Elements */
+.recharts-cartesian-axis-line {
+  stroke: #e5e7eb;
+}
+
+.recharts-cartesian-axis-tick-line {
+  stroke: #e5e7eb;
+}
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #f3f4f6;
+}
+
+.recharts-bar {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* =================================================================
+   RESPONSIVE DESIGN - TABLET
+   ================================================================= */
+@media (max-width: 1024px) {
+  .filters-container, 
+  .charts-grid {
+    margin: 0 2rem;
+  }
+  
+  .filters-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .countries-container {
+    grid-column: span 1;
+  }
+  
+  .header-content {
+    padding: 2rem;
+  }
+
+  .page-header-section {
+    padding: 2rem;
+  }
+  
+  .chart-container {
+    min-height: 450px;
+  }
+}
+
+/* =================================================================
+   RESPONSIVE DESIGN - MOBILE
+   ================================================================= */
+@media (max-width: 768px) {
+  /* Header Adjustments */
+  .header-content {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+
+  .navigation {
+    gap: 1rem;
+  }
+
+  /* Layout Adjustments */
+  .page-header-section {
+    padding: 1.5rem;
+  }
+
+  .filters-container,
+  .charts-grid {
+    margin: 0 1.5rem;
+    max-width: none;
+  }
+  
+  .charts-grid {
+    padding: 0;
+  }
+  
+  .filters-container {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Chart Adjustments */
+  .chart-container {
+    min-height: 320px;
+    max-height: 370px;
+    padding: 1.5rem;
+  }
+
+  /* Agency Grid Adjustments */
+  .agencies-header,
+  .agency-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* =================================================================
+   RESPONSIVE DESIGN - SMALL MOBILE
+   ================================================================= */
+@media (max-width: 480px) {
+  /* Layout Adjustments */
+  .filters-container, 
+  .charts-grid {
+    margin: 0 1rem;
+    padding: 1.5rem;
+  }
+  
+  .header-content,
+  .page-header-section {
+    padding: 1rem;
+  }
+  
+  /* Typography Adjustments */
+  .page-title {
+    font-size: 1.5rem;
+  }
+  
+  /* Chart Adjustments */
+  .chart-container {
+    min-height: 350px;
+    padding: 1rem;
+  }
+  
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .chart-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Agency Grid Adjustments */
+  .agencies-header,
+  .agency-row {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 0.25rem;
+    padding: 0.5rem;
+  }
+}
