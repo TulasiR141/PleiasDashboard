@@ -2,8 +2,10 @@
   "ExpandedNodes": [
     "",
     "\\Backend",
-    "\\Backend\\ExpertiseFrance.API"
+    "\\Backend\\ExpertiseFrance.API",
+    "\\Backend\\ExpertiseFrance.API\\Controller",
+    "\\Frontend"
   ],
-  "SelectedNode": "\\Backend\\ExpertiseFrance.API\\ExpertiseFrance.API.csproj",
+  "SelectedNode": "\\Backend\\ExpertiseFrance.API\\Controller\\ProjectsController.cs",
   "PreviewInSolutionExplorer": false
 }

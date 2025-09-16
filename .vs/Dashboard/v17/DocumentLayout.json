@@ -7,6 +7,22 @@
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Backend\\ExpertiseFrance.API\\Controller\\ProjectsController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\tulas\\Documents\\Dashboard\\Backend\\ExpertiseFrance.API\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Backend\\ExpertiseFrance.API\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\tulas\\Documents\\Dashboard\\Frontend\\.env.example||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Frontend\\.env.example||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\tulas\\Documents\\Dashboard\\Frontend\\.env.production||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Frontend\\.env.production||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\tulas\\Documents\\Dashboard\\Frontend\\.env.development||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Frontend\\.env.development||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\tulas\\Documents\\Dashboard\\Backend\\ExpertiseFrance.API\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Backend\\ExpertiseFrance.API\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
@@ -18,11 +34,60 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\tulas\\Documents\\Dashboard\\Backend\\ExpertiseFrance.API\\appsettings.json",
+              "RelativeDocumentMoniker": "Backend\\ExpertiseFrance.API\\appsettings.json",
+              "ToolTip": "C:\\Users\\tulas\\Documents\\Dashboard\\Backend\\ExpertiseFrance.API\\appsettings.json",
+              "RelativeToolTip": "Backend\\ExpertiseFrance.API\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-09-15T15:36:27.843Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": ".env.example",
+              "DocumentMoniker": "C:\\Users\\tulas\\Documents\\Dashboard\\Frontend\\.env.example",
+              "RelativeDocumentMoniker": "Frontend\\.env.example",
+              "ToolTip": "C:\\Users\\tulas\\Documents\\Dashboard\\Frontend\\.env.example",
+              "RelativeToolTip": "Frontend\\.env.example",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAPAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-09-15T15:25:36.009Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": ".env.production",
+              "DocumentMoniker": "C:\\Users\\tulas\\Documents\\Dashboard\\Frontend\\.env.production",
+              "RelativeDocumentMoniker": "Frontend\\.env.production",
+              "ToolTip": "C:\\Users\\tulas\\Documents\\Dashboard\\Frontend\\.env.production",
+              "RelativeToolTip": "Frontend\\.env.production",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-09-15T15:25:23.556Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": ".env.development",
+              "DocumentMoniker": "C:\\Users\\tulas\\Documents\\Dashboard\\Frontend\\.env.development",
+              "RelativeDocumentMoniker": "Frontend\\.env.development",
+              "ToolTip": "C:\\Users\\tulas\\Documents\\Dashboard\\Frontend\\.env.development",
+              "RelativeToolTip": "Frontend\\.env.development",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-09-15T15:24:57.152Z"
             },
             {
               "$type": "Document",
@@ -32,14 +97,14 @@
               "RelativeDocumentMoniker": "Backend\\ExpertiseFrance.API\\Controller\\ProjectsController.cs",
               "ToolTip": "C:\\Users\\tulas\\Documents\\Dashboard\\Backend\\ExpertiseFrance.API\\Controller\\ProjectsController.cs",
               "RelativeToolTip": "Backend\\ExpertiseFrance.API\\Controller\\ProjectsController.cs",
-              "ViewState": "AgIAAAwAAAAAAAAAAAAAABIAAAARAAAAAAAAAA==",
+              "ViewState": "AgIAABEAAAAAAAAAAAAIwBwAAAAnAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-14T22:33:06.127Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 5,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\tulas\\Documents\\Dashboard\\Backend\\ExpertiseFrance.API\\Program.cs",
               "RelativeDocumentMoniker": "Backend\\ExpertiseFrance.API\\Program.cs",
@@ -47,8 +112,7 @@
               "RelativeToolTip": "Backend\\ExpertiseFrance.API\\Program.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAA9AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-08T10:23:54.938Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-08T10:23:54.938Z"
             }
           ]
         }

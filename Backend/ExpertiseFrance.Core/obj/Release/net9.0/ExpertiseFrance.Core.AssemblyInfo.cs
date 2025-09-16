@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ExpertiseFrance.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b1ca6a636f11c3d564aef3abadd79da0ec455f21")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7e7c13d0730ef99a4dc01a43792a3f0cce57fc29")]
 [assembly: System.Reflection.AssemblyProductAttribute("ExpertiseFrance.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ExpertiseFrance.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
