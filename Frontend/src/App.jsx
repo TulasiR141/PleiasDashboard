@@ -9,6 +9,7 @@ import Chatbot  from './components/Chatbot';
 
 
 function App() {
+  console.log("App component rendered");
   return (
     <Router>
       <Routes>
