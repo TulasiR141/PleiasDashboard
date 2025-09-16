@@ -293,7 +293,7 @@ const FundingManagementAnalysis = () => {
               {chartsLoading ? (
                 <div className="loading-state">Loading chart data...</div>
               ) : countriesData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
+                <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={countriesData}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
@@ -347,7 +347,7 @@ const FundingManagementAnalysis = () => {
               {chartsLoading ? (
                 <div className="loading-state">Loading chart data...</div>
               ) : programsData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={programsData}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
@@ -386,7 +386,7 @@ const FundingManagementAnalysis = () => {
               </div>
               <div className="chart-title-section">
                 <h2 className="chart-title">Top Agencies (Engaged)</h2>
-                <p className="chart-subtitle">List of top agencies</p>
+                <p className="chart-subtitle">Agency details and funding information</p>
               </div>
             </div>
 
@@ -397,26 +397,34 @@ const FundingManagementAnalysis = () => {
                 <div className="agencies-grid">
                   <div className="agencies-header">
                     <div className="agency-column-header">Agency</div>
+                    <div className="agency-column-header">Amount (€M)</div>
+                    <div className="agency-column-header">Projects</div>
                   </div>
-                  {chartData.topAgencies && chartData.topAgencies.length > 0 ? (
-                    chartData.topAgencies.map((item, index) => {
-                      if (!item || typeof item !== 'object') return null;
-                      
-                      const agency = typeof item.agency === 'string' ? item.agency : `Agency ${index + 1}`;
-                      
-                      return (
-                        <div key={`agency-${index}`} className="agency-row">
-                          <div className="agency-name">{agency}</div>
+                  <div className="agencies-content">
+                    {chartData.topAgencies && chartData.topAgencies.length > 0 ? (
+                      chartData.topAgencies.map((item, index) => {
+                        if (!item || typeof item !== 'object') return null;
+                        
+                        const agency = typeof item.agency === 'string' ? item.agency : `Agency ${index + 1}`;
+                        const amount = typeof item.indirectAmount === 'number' ? formatAmount(item.indirectAmount) : '0.0';
+                        const projectCount = typeof item.projectCount === 'number' ? item.projectCount : item.count || 0;
+                        
+                        return (
+                          <div key={`agency-${index}`} className="agency-row">
+                            <div className="agency-name" title={agency}>{agency}</div>
+                            <div className="agency-amount">€{amount}M</div>
+                            <div className="agency-count">{projectCount}</div>
+                          </div>
+                        );
+                      }).filter(Boolean)
+                    ) : (
+                      <div className="agency-row">
+                        <div className="agency-name" style={{textAlign: 'center', color: '#6b7280', gridColumn: '1 / -1'}}>
+                          No data available
                         </div>
-                      );
-                    }).filter(Boolean)
-                  ) : (
-                    <div className="agency-row">
-                      <div className="agency-name" style={{textAlign: 'center', color: '#6b7280'}}>
-                        No data available
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               )}
             </div>

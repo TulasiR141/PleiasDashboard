@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User, Maximize2, Minimize2, Eye, EyeOff, Search } from 'lucide-react';
 import "../styles/Chatbot.css";
+import { API_BASE_URL } from '../config/environment';
 
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -61,7 +62,7 @@ const Chatbot = () => {
     // API call function
     const callChatAPI = async (query) => {
         try {
-            const response = await fetch('http://57.128.85.149:5432/chat', {
+            const response = await fetch(`${API_BASE_URL}/py/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -236,28 +237,7 @@ const Chatbot = () => {
                             </div>
                         ) : (
                             <div>
-                                {/* API Metadata Section */}
-                                {analysisData.apiMetadata && (
-                                    <div className="analysis-section">
-                                        <h4 className="analysis-section-title">Response Metadata</h4>
-                                        <div className="metadata-item">
-                                            <strong>Answer ID:</strong> {analysisData.apiMetadata.answer_id}
-                                        </div>
-                                        <div className="metadata-item">
-                                            <strong>Sources Found:</strong> {analysisData.apiMetadata.sources_count}
-                                        </div>
-                                        <div className="metadata-item">
-                                            <strong>Generation Time:</strong> {analysisData.apiMetadata.generation_time?.toFixed(2)}s
-                                        </div>
-                                        {analysisData.apiMetadata.source_filtering && (
-                                            <div className="metadata-item">
-                                                <strong>Source Filtering:</strong> 
-                                                {analysisData.apiMetadata.source_filtering.original_count} → {analysisData.apiMetadata.source_filtering.used_count} sources
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
+                               
                                 {/* Sources Section */}
                                 {analysisData.sources && analysisData.sources.length > 0 && (
                                     <div className="analysis-section">
@@ -374,7 +354,7 @@ const Chatbot = () => {
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Ask about funding data, charts, or dashboard features..."
+                    placeholder="Ask about dashboard features and charts ..."
                     className="chatbot-textarea"
                     rows="1"
                 />

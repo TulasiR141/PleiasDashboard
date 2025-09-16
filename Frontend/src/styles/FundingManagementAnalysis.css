@@ -28,14 +28,14 @@ body {
 /* =================================================================
    HEADER COMPONENTS
    ================================================================= */
-.header {
+.funding-management-page .header {
   background-color: white;
   border-bottom: 1px solid #e2e8f0;
   padding: 0;
   width: 100vw;
 }
 
-.header-content {
+.funding-management-page .header-content {
   max-width: none;
   margin: 0;
   display: flex;
@@ -46,18 +46,18 @@ body {
 }
 
 /* Logo Section */
-.logo-section {
+.funding-management-page .logo-section {
   display: flex;
   align-items: center;
 }
 
-.logo {
+.funding-management-page .logo {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.logo-icon {
+.funding-management-page .logo-icon {
   width: 40px;
   height: 40px;
   background-color: #1e40af;
@@ -69,31 +69,31 @@ body {
   font-size: 20px;
 }
 
-.logo-text {
+.funding-management-page .logo-text {
   display: flex;
   flex-direction: column;
 }
 
-.logo-title {
+.funding-management-page .logo-title {
   font-size: 1.25rem;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
 }
 
-.logo-subtitle {
+.funding-management-page .logo-subtitle {
   font-size: 0.875rem;
   color: #64748b;
   margin: 0;
 }
 
 /* Navigation */
-.navigation {
+.funding-management-page .navigation {
   display: flex;
   gap: 2rem;
 }
 
-.nav-link {
+.funding-management-page .nav-link {
   text-decoration: none;
   color: #64748b;
   font-weight: 500;
@@ -103,15 +103,15 @@ body {
   cursor: pointer;
 }
 
-.nav-link:hover {
+.funding-management-page .nav-link:hover {
   color: #1e293b;
 }
 
-.nav-link.active {
+.funding-management-page .nav-link.active {
   color: #1e40af;
 }
 
-.nav-link.active::after {
+.funding-management-page .nav-link.active::after {
   content: '';
   position: absolute;
   bottom: -1rem;
@@ -124,18 +124,18 @@ body {
 /* =================================================================
    PAGE LAYOUT
    ================================================================= */
-.page-header-section {
+.funding-management-page .page-header-section {
   padding: 2rem 3rem 0 3rem;
 }
 
-.page-title {
+.funding-management-page .page-title {
   font-size: 2rem;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
 }
 
-.main-content {
+.funding-management-page .main-content {
   width: 100vw;
   margin: 0;
   padding: 2rem 0;
@@ -145,7 +145,7 @@ body {
   gap: 2rem;
 }
 
-.loading-container {
+.funding-management-page .loading-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -157,7 +157,7 @@ body {
 /* =================================================================
    FILTERS SECTION
    ================================================================= */
-.filters-container {
+.funding-management-page .filters-container {
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -168,19 +168,19 @@ body {
   margin: 0 3rem;
 }
 
-.filter-group {
+.funding-management-page .filter-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.filter-label {
+.funding-management-page .filter-label {
   font-size: 0.875rem;
   font-weight: 500;
   color: #374151;
 }
 
-.filter-select {
+.funding-management-page .filter-select {
   padding: 0.75rem 1rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -196,17 +196,17 @@ body {
   background-size: 0.65rem auto;
 }
 
-.filter-select:hover {
+.funding-management-page .filter-select:hover {
   border-color: #9ca3af;
 }
 
-.filter-select:focus {
+.funding-management-page .filter-select:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.filter-select:disabled {
+.funding-management-page .filter-select:disabled {
   background-color: #f9fafb;
   color: #9ca3af;
   cursor: not-allowed;
@@ -215,33 +215,45 @@ body {
 /* =================================================================
    CHARTS SECTION
    ================================================================= */
-.charts-grid {
+.funding-management-page .charts-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: auto auto;
-  gap: 2rem;
-  margin: 0 0.5rem;
+  gap: 1.5rem;
+  margin: 0 3rem;
 }
 
-.countries-container {
+.funding-management-page .countries-container {
   grid-column: span 2;
 }
 
-.chart-container {
+.funding-management-page .chart-container {
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  min-height: 500px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
 }
 
-.chart-header {
+/* Fixed height for consistent layout */
+.funding-management-page .countries-container {
+  height: 500px;
+}
+
+.funding-management-page .chart-container:not(.countries-container) {
+  height: 450px;
+}
+
+.funding-management-page .chart-header {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  flex-shrink: 0;
 }
 
-.chart-icon {
+.funding-management-page .chart-icon {
   width: 48px;
   height: 48px;
   background-color: #dbeafe;
@@ -252,38 +264,40 @@ body {
   justify-content: center;
 }
 
-.chart-title {
+.funding-management-page .chart-title {
   font-size: 1.25rem;
   font-weight: 600;
   color: #1e293b;
   margin: 0;
 }
 
-.chart-subtitle {
+.funding-management-page .chart-subtitle {
   font-size: 0.875rem;
   color: #64748b;
   margin: 0.25rem 0 0 0;
 }
 
-.chart-content {
+.funding-management-page .chart-content {
+  flex: 1;
   width: 100%;
+  min-height: 0;
 }
 
-.loading-state {
+.funding-management-page .loading-state {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 400px;
+  height: 100%;
   color: #64748b;
   font-style: italic;
   font-size: 1rem;
 }
 
-.no-data {
+.funding-management-page .no-data {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 400px;
+  height: 100%;
   color: #6b7280;
   font-style: italic;
   font-size: 1rem;
@@ -292,54 +306,72 @@ body {
 /* =================================================================
    AGENCIES GRID SECTION
    ================================================================= */
-.agencies-grid {
+.funding-management-page .agencies-grid {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  height: 100%;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  overflow-y: scroll;
-  margin-top: 1rem;
+  overflow: hidden;
 }
 
-.agencies-header {
+.funding-management-page .agencies-header {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 1rem;
   padding: 1rem 1.5rem;
   background-color: #f8fafc;
   font-weight: 600;
   color: #374151;
   border-bottom: 2px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
-.agency-column-header {
+.funding-management-page .agency-column-header {
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.agency-row {
+.funding-management-page .agencies-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.funding-management-page .agency-row {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 1rem;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #e5e7eb;
   transition: background-color 0.2s;
 }
 
-.agency-row:hover {
+.funding-management-page .agency-row:hover {
   background-color: #f8fafc;
 }
 
-.agency-row:last-child {
+.funding-management-page .agency-row:last-child {
   border-bottom: none;
 }
 
-.agency-name {
+.funding-management-page .agency-name {
   font-weight: 500;
   color: #374151;
   line-height: 1.4;
+}
+
+.funding-management-page .agency-amount {
+  font-weight: 500;
+  color: #059669;
+  text-align: right;
+}
+
+.funding-management-page .agency-count {
+  font-weight: 500;
+  color: #374151;
+  text-align: center;
 }
 
 /* =================================================================
@@ -347,7 +379,7 @@ body {
    ================================================================= */
 
 /* Tooltip Styles */
-.recharts-tooltip {
+.funding-management-page .recharts-tooltip {
   background: white !important;
   border: 1px solid #e5e7eb !important;
   border-radius: 8px !important;
@@ -355,49 +387,49 @@ body {
   padding: 12px !important;
 }
 
-.recharts-tooltip .tooltip-label {
+.funding-management-page .recharts-tooltip .tooltip-label {
   font-weight: 600 !important;
   color: #1f2937 !important;
   margin-bottom: 4px !important;
   font-size: 0.875rem !important;
 }
 
-.recharts-tooltip p {
+.funding-management-page .recharts-tooltip p {
   margin: 2px 0 !important;
   font-size: 0.875rem !important;
   color: #374151 !important;
 }
 
 /* Legend Styles */
-.recharts-legend-wrapper {
+.funding-management-page .recharts-legend-wrapper {
   padding-bottom: 20px !important;
 }
 
-.recharts-legend-item {
+.funding-management-page .recharts-legend-item {
   margin-right: 20px !important;
 }
 
-.recharts-legend-item-text {
+.funding-management-page .recharts-legend-item-text {
   color: #374151 !important;
   font-size: 0.875rem !important;
   font-weight: 500 !important;
 }
 
 /* Chart Elements */
-.recharts-cartesian-axis-line {
+.funding-management-page .recharts-cartesian-axis-line {
   stroke: #e5e7eb;
 }
 
-.recharts-cartesian-axis-tick-line {
+.funding-management-page .recharts-cartesian-axis-tick-line {
   stroke: #e5e7eb;
 }
 
-.recharts-cartesian-grid-horizontal line,
-.recharts-cartesian-grid-vertical line {
+.funding-management-page .recharts-cartesian-grid-horizontal line,
+.funding-management-page .recharts-cartesian-grid-vertical line {
   stroke: #f3f4f6;
 }
 
-.recharts-bar {
+.funding-management-page .recharts-bar {
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 }
 
@@ -405,33 +437,34 @@ body {
    RESPONSIVE DESIGN - TABLET
    ================================================================= */
 @media (max-width: 1024px) {
-  .filters-container, 
-  .charts-grid {
+  .funding-management-page .filters-container, 
+  .funding-management-page .charts-grid {
     margin: 0 2rem;
   }
   
-  .filters-container {
+  .funding-management-page .filters-container {
     grid-template-columns: 1fr;
   }
   
-  .charts-grid {
+  .funding-management-page .charts-grid {
     grid-template-columns: 1fr;
   }
   
-  .countries-container {
+  .funding-management-page .countries-container {
     grid-column: span 1;
   }
   
-  .header-content {
+  .funding-management-page .header-content {
     padding: 2rem;
   }
 
-  .page-header-section {
+  .funding-management-page .page-header-section {
     padding: 2rem;
   }
   
-  .chart-container {
-    min-height: 450px;
+  .funding-management-page .agencies-header,
+  .funding-management-page .agency-row {
+    grid-template-columns: 2fr 1fr;
   }
 }
 
@@ -440,45 +473,51 @@ body {
    ================================================================= */
 @media (max-width: 768px) {
   /* Header Adjustments */
-  .header-content {
+  .funding-management-page .header-content {
     flex-direction: column;
     gap: 1rem;
     padding: 1.5rem;
   }
 
-  .navigation {
+  .funding-management-page .navigation {
     gap: 1rem;
   }
 
   /* Layout Adjustments */
-  .page-header-section {
+  .funding-management-page .page-header-section {
     padding: 1.5rem;
   }
 
-  .filters-container,
-  .charts-grid {
+  .funding-management-page .filters-container,
+  .funding-management-page .charts-grid {
     margin: 0 1.5rem;
     max-width: none;
   }
   
-  .charts-grid {
+  .funding-management-page .charts-grid {
     padding: 0;
   }
   
-  .filters-container {
+  .funding-management-page .filters-container {
     grid-template-columns: 1fr;
   }
   
   /* Chart Adjustments */
-  .chart-container {
-    min-height: 320px;
-    max-height: 370px;
+  .funding-management-page .countries-container {
+    height: 400px;
+  }
+
+  .funding-management-page .chart-container:not(.countries-container) {
+    height: 380px;
+  }
+
+  .funding-management-page .chart-container {
     padding: 1.5rem;
   }
 
   /* Agency Grid Adjustments */
-  .agencies-header,
-  .agency-row {
+  .funding-management-page .agencies-header,
+  .funding-management-page .agency-row {
     grid-template-columns: 1fr;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
@@ -491,42 +530,52 @@ body {
    ================================================================= */
 @media (max-width: 480px) {
   /* Layout Adjustments */
-  .filters-container, 
-  .charts-grid {
+  .funding-management-page .filters-container, 
+  .funding-management-page .charts-grid {
     margin: 0 1rem;
+  }
+  
+  .funding-management-page .filters-container {
     padding: 1.5rem;
   }
   
-  .header-content,
-  .page-header-section {
+  .funding-management-page .header-content,
+  .funding-management-page .page-header-section {
     padding: 1rem;
   }
   
   /* Typography Adjustments */
-  .page-title {
+  .funding-management-page .page-title {
     font-size: 1.5rem;
   }
   
   /* Chart Adjustments */
-  .chart-container {
-    min-height: 350px;
+  .funding-management-page .countries-container {
+    height: 350px;
+  }
+
+  .funding-management-page .chart-container:not(.countries-container) {
+    height: 350px;
+  }
+
+  .funding-management-page .chart-container {
     padding: 1rem;
   }
   
-  .chart-header {
+  .funding-management-page .chart-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
   
-  .chart-icon {
+  .funding-management-page .chart-icon {
     width: 40px;
     height: 40px;
   }
 
   /* Agency Grid Adjustments */
-  .agencies-header,
-  .agency-row {
+  .funding-management-page .agencies-header,
+  .funding-management-page .agency-row {
     grid-template-columns: 1fr;
     text-align: center;
     gap: 0.25rem;

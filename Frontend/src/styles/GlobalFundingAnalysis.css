@@ -187,6 +187,42 @@ html, body {
   transform: translateY(-1px);
 }
 
+/* No Data Available Styles */
+.no-data-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+}
+
+.no-data-message {
+  text-align: center;
+  color: #6c757d;
+}
+
+.no-data-message h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 1rem;
+}
+
+.no-data-message p {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.no-data-message p:last-child {
+  margin-bottom: 0;
+  font-weight: 500;
+  color: #6f42c1;
+}
+
 /* Filters */
 .filters-container {
   background: white;
@@ -355,41 +391,7 @@ html, body {
   z-index: 1;
 }
 
-/* Fallback Map */
-.fallback-map {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
-  border-radius: 8px;
-  padding: 20px;
-  overflow: hidden;
-}
-
-.fallback-info {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: rgba(255,255,255,0.9);
-  padding: 10px;
-  border-radius: 5px;
-  font-size: 12px;
-  max-width: 200px;
-}
-
-.fallback-info strong {
-  color: #333;
-  display: block;
-  margin-bottom: 5px;
-}
-
-.fallback-country {
-  margin-top: 5px;
-  color: #555;
-}
-
+/* Fallback Loading */
 .fallback-loading {
   position: absolute;
   bottom: 20px;
@@ -425,7 +427,7 @@ html, body {
 .statistics-grid {
   margin-top: 30px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 
@@ -494,7 +496,8 @@ html, body {
   }
 
   .statistics-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
   }
 
   .navigation {
@@ -567,12 +570,25 @@ html, body {
   }
 
   .statistics-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 15px;
   }
 
   .stat-card {
     padding: 15px;
+  }
+
+  .no-data-container {
+    min-height: 300px;
+    padding: 1.5rem;
+  }
+
+  .no-data-message h3 {
+    font-size: 1.25rem;
+  }
+
+  .no-data-message p {
+    font-size: 0.875rem;
   }
 }
 
@@ -643,6 +659,11 @@ html, body {
 
   .legend-item {
     font-size: 11px;
+  }
+
+  .statistics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 }
 

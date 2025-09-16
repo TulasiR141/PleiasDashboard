@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, BarChart3, PieChart, List } from 'lucide-react';
+import { MapPin, BarChart3, PieChart, List, Download } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import '../styles/CountryFundingAnalysis.css';
 
 import { API_BASE_URL } from '../config/environment';
@@ -23,11 +24,11 @@ const CountryFundingAnalysis = () => {
   });
   const [loading, setLoading] = useState(true);
   const [chart2Count, setChart2Count] = useState('7');
+  const [isExporting, setIsExporting] = useState(false);
 
   const yearRangeOptions = ['2021-2024', '2025-2027', '2021-2027'];
 
-  // Get base URL based on environment
- // NEW
+  // Navigation handler
   const handleNavigation = (page) => {
     switch(page) {
       case 'global':
@@ -90,10 +91,24 @@ const CountryFundingAnalysis = () => {
       );
     };
 
+    // Special filtering logic for CAD data
+    const filterCADData = (data) => {
+      if (filters.yearRange === '2021-2027') {
+        // Show all data for selected country regardless of year range
+        return data.filter(item => item.country === filters.country);
+      } else {
+        // Filter normally by both country and year range
+        return data.filter(item => 
+          item.country === filters.country && 
+          item.yearRange === filters.yearRange
+        );
+      }
+    };
+
     setFilteredData({
       engage: filterByCountryAndYear(apiData.engage || []),
       projected: filterByCountryAndYear(apiData.projected || []),
-      cadData: filterByCountryAndYear(apiData.cadDataChart2 || []),
+      cadData: filterCADData(apiData.cadDataChart2 || []),
       actionData: filterByCountryAndYear(apiData.actionDataChart3 || [])
     });
   }, [apiData, filters]);
@@ -105,13 +120,85 @@ const CountryFundingAnalysis = () => {
     }));
   };
 
+  // Download MIP Report function
+  const downloadMipReport = async (country, username, start, end) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/py/generate_report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, country, start, end }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`Request failed: ${res.status} ${text}`);
+      }
+
+      const blob = await res.blob();
+      
+      // Get filename from Content-Disposition header
+      const disposition = res.headers.get('Content-Disposition') || '';
+      let filename = 'Analyse_MIP.xlsx';
+      if (disposition && disposition.includes("filename=")) {
+        filename = disposition.split("filename=")[1].replace(/['"]/g, "");
+      }
+      
+      // Create temporary link to trigger download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  // Handle export button click
+  const handleExport = async () => {
+    if (!filters.country) {
+      alert('Please select a country to export data.');
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+
+      // Parse year range to get start and end years
+      const yearRange = filters.yearRange;
+      let startYear, endYear;
+
+      if (yearRange === '2021-2024') {
+        startYear = '2021';
+        endYear = '2024';
+      } else if (yearRange === '2025-2027') {
+        startYear = '2025';
+        endYear = '2027';
+      } else if (yearRange === '2021-2027') {
+        startYear = '2021';
+        endYear = '2027';
+      }
+
+      await downloadMipReport(filters.country, 'user', startYear, endYear);
+      console.log('Download started');
+    } catch (error) {
+      console.error(error);
+      alert('Export failed: ' + error.message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Render pie chart with legends
   const renderPieChart = (data, title, dataKey = 'percentage') => {
     if (!data || data.length === 0) {
       return (
-        <div className="pie-chart-container">
-          <h4 className="pie-chart-title">{title}</h4>
-          <div className="no-data">No data available</div>
+        <div className="country-funding-pie-chart-container">
+          <h4 className="country-funding-pie-chart-title">{title}</h4>
+          <div className="country-funding-no-data">No data available</div>
         </div>
       );
     }
@@ -120,10 +207,10 @@ const CountryFundingAnalysis = () => {
     let cumulativePercentage = 0;
 
     return (
-      <div className="pie-chart-container">
-        <h4 className="pie-chart-title">{title}</h4>
-        <div className="pie-chart-content">
-          <div className="pie-chart-wrapper">
+      <div className="country-funding-pie-chart-container">
+        <h4 className="country-funding-pie-chart-title">{title}</h4>
+        <div className="country-funding-pie-chart-content">
+          <div className="country-funding-pie-chart-wrapper">
             <svg width="200" height="200" viewBox="0 0 200 200">
               {data.map((item, index) => {
                 const percentage = item[dataKey] || 0;
@@ -172,14 +259,14 @@ const CountryFundingAnalysis = () => {
               })}
             </svg>
           </div>
-          <div className="pie-chart-legend">
+          <div className="country-funding-pie-chart-legend">
             {data.map((item, index) => (
-              <div key={index} className="legend-item">
+              <div key={index} className="country-funding-legend-item">
                 <div 
-                  className="legend-color" 
+                  className="country-funding-legend-color" 
                   style={{ backgroundColor: colors[index % colors.length] }}
                 ></div>
-                <span className="legend-text">
+                <span className="country-funding-legend-text">
                   {item.area || `Area ${index + 1}`}
                 </span>
               </div>
@@ -192,11 +279,11 @@ const CountryFundingAnalysis = () => {
 
   // Render progress bar
   const renderProgressBar = () => (
-    <div className="progress-container">
-      <div className="progress-bar">
-        <div className="progress-fill"></div>
+    <div className="country-funding-progress-container">
+      <div className="country-funding-progress-bar">
+        <div className="country-funding-progress-fill"></div>
       </div>
-      <span className="progress-text">Loading...</span>
+      <span className="country-funding-progress-text">Loading...</span>
     </div>
   );
 
@@ -210,8 +297,8 @@ const CountryFundingAnalysis = () => {
 
   if (loading) {
     return (
-      <div className="country-analysis">
-        <div className="loading-screen">
+      <div className="country-funding-analysis">
+        <div className="country-funding-loading-screen">
           {renderProgressBar()}
         </div>
       </div>
@@ -219,41 +306,41 @@ const CountryFundingAnalysis = () => {
   }
 
   return (
-    <div className="country-analysis">
+    <div className="country-funding-analysis">
       {/* Header */}
-      <header className="header">
-        <div className="header-content">
-          <div className="logo-section">
-            <div className="logo">
-              <span className="logo-icon">EU</span>
-              <div className="logo-text">
-                <h1 className="logo-title">EU Funding Analytics</h1>
-                <p className="logo-subtitle">European Union Funding Dashboard</p>
+      <header className="country-funding-header">
+        <div className="country-funding-header-content">
+          <div className="country-funding-logo-section">
+            <div className="country-funding-logo">
+              <span className="country-funding-logo-icon">EU</span>
+              <div className="country-funding-logo-text">
+                <h1 className="country-funding-logo-title">EU Funding Analytics</h1>
+                <p className="country-funding-logo-subtitle">European Union Funding Dashboard</p>
               </div>
             </div>
           </div>
           
-          <nav className="navigation">
-            <button className="nav-link" onClick={() => handleNavigation('home')}>Home</button>
-            <button className="nav-link" onClick={() => handleNavigation('global')}>Sectors</button>
-            <button className="nav-link active" onClick={() => handleNavigation('country')}>Countries</button>
-            <button className="nav-link" onClick={() => handleNavigation('funding')}>Funding Flows</button>
+          <nav className="country-funding-navigation">
+            <button className="country-funding-nav-link" onClick={() => handleNavigation('home')}>Home</button>
+            <button className="country-funding-nav-link" onClick={() => handleNavigation('global')}>Sectors</button>
+            <button className="country-funding-nav-link active" onClick={() => handleNavigation('country')}>Countries</button>
+            <button className="country-funding-nav-link" onClick={() => handleNavigation('funding')}>Funding Flows</button>
           </nav>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="main-content">
-        <div className="page-header-section">
-          <h1 className="page-title">Country Funding Analysis</h1>
+      <main className="country-funding-main-content">
+        <div className="country-funding-page-header-section">
+          <h1 className="country-funding-page-title">Country Funding Analysis</h1>
         </div>
 
         {/* Filters Container */}
-        <div className="filters-container">
-          <div className="filter-group">
-            <label className="filter-label">Country</label>
+        <div className="country-funding-filters-container">
+          <div className="country-funding-filter-group">
+            <label className="country-funding-filter-label">Country</label>
             <select 
-              className="filter-select"
+              className="country-funding-filter-select"
               value={filters.country}
               onChange={(e) => handleFilterChange('country', e.target.value)}
             >
@@ -263,10 +350,10 @@ const CountryFundingAnalysis = () => {
             </select>
           </div>
 
-          <div className="filter-group">
-            <label className="filter-label">Year Range</label>
+          <div className="country-funding-filter-group">
+            <label className="country-funding-filter-label">Year Range</label>
             <select 
-              className="filter-select"
+              className="country-funding-filter-select"
               value={filters.yearRange}
               onChange={(e) => handleFilterChange('yearRange', e.target.value)}
             >
@@ -275,24 +362,33 @@ const CountryFundingAnalysis = () => {
               ))}
             </select>
           </div>
+
+          <button
+            className="country-funding-export-button"
+            onClick={handleExport}
+            disabled={isExporting || !filters.country}
+          >
+            <Download size={16} />
+            {isExporting ? 'Exporting...' : 'Export Data'}
+          </button>
         </div>
 
         {/* Charts Container */}
-        <div className="charts-container">
+        <div className="country-funding-charts-container">
           {/* Chart 1: Pie Charts Comparison */}
-          <div className="chart-container chart-full-width">
-            <div className="chart-header">
-              <div className="chart-icon">
+          <div className="country-funding-chart-container country-funding-chart-full-width">
+            <div className="country-funding-chart-header">
+              <div className="country-funding-chart-icon">
                 <PieChart size={24} />
               </div>
-              <div className="chart-title-section">
-                <h2 className="chart-title">Priority Areas Funding Comparison</h2>
-                <p className="chart-subtitle">Projected vs Engaged Amount Distribution</p>
+              <div className="country-funding-chart-title-section">
+                <h2 className="country-funding-chart-title">Priority Areas Funding Comparison</h2>
+                <p className="country-funding-chart-subtitle">Projected vs Engaged Amount Distribution</p>
               </div>
             </div>
 
-            <div className="chart-content">
-              <div className="pie-charts-container">
+            <div className="country-funding-chart-content">
+              <div className="country-funding-pie-charts-container">
                 {renderPieChart(filteredData.projected, "Projected Amount")}
                 {renderPieChart(filteredData.engage, "Engaged Amount")}
               </div>
@@ -300,23 +396,23 @@ const CountryFundingAnalysis = () => {
           </div>
 
           {/* Charts Row 2 */}
-          <div className="charts-row">
-            {/* Chart 2: Top CAD Items Grid */}
-            <div className="chart-container">
-              <div className="chart-header">
-                <div className="chart-icon">
+          <div className="country-funding-charts-row">
+            {/* Chart 2: Top CAD Items Grid - FIXED SIZE */}
+            <div className="country-funding-chart-container">
+              <div className="country-funding-chart-header">
+                <div className="country-funding-chart-icon">
                   <List size={24} />
                 </div>
-                <div className="chart-title-section">
-                  <h2 className="chart-title">Top CAD Data</h2>
-                  <p className="chart-subtitle">CAD Code and Name</p>
+                <div className="country-funding-chart-title-section">
+                  <h2 className="country-funding-chart-title">Top CAD Data</h2>
+                  <p className="country-funding-chart-subtitle">CAD Code and Name</p>
                 </div>
-                <div className="chart-filter">
+                <div className="country-funding-chart-filter">
                   <label>Show top: </label>
                   <select 
                     value={chart2Count} 
                     onChange={(e) => setChart2Count(e.target.value)}
-                    className="count-select"
+                    className="country-funding-count-select"
                   >
                     <option value="5">5</option>
                     <option value="7">7</option>
@@ -327,106 +423,126 @@ const CountryFundingAnalysis = () => {
                 </div>
               </div>
 
-              <div className="chart-content">
-                <div className="cad-grid">
-                  <div className="cad-grid-header">
-                    <div className="cad-header-cell">CAD Code</div>
-                    <div className="cad-header-cell">Name</div>
+              <div className="country-funding-chart-content">
+                <div className="country-funding-cad-grid">
+                  <div className="country-funding-cad-grid-header">
+                    <div className="country-funding-cad-header-cell">CAD Code</div>
+                    <div className="country-funding-cad-header-cell">Name</div>
                   </div>
-                  {getTopCADItems().length > 0 ? (
-                    getTopCADItems().map((item, index) => (
-                      <div key={index} className="cad-grid-row">
-                        <div className="cad-grid-cell">{item.cadCode || 'N/A'}</div>
-                        <div className="cad-grid-cell">{item.name || 'N/A'}</div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="no-data">No CAD data available</div>
-                  )}
+                  <div className="country-funding-cad-grid-body">
+                    {getTopCADItems().length > 0 ? (
+                      getTopCADItems().map((item, index) => (
+                        <div key={index} className="country-funding-cad-grid-row">
+                          <div className="country-funding-cad-grid-cell">{item.cadCode || 'N/A'}</div>
+                          <div className="country-funding-cad-grid-cell">{item.name || 'N/A'}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="country-funding-no-data">No CAD data available</div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Chart 3: Action Plans Bar Chart */}
-            <div className="chart-container">
-              <div className="chart-header">
-                <div className="chart-icon">
+            {/* Chart 3: Action Plans Bar Chart - FIXED SIZE */}
+            <div className="country-funding-chart-container">
+              <div className="country-funding-chart-header">
+                <div className="country-funding-chart-icon">
                   <BarChart3 size={24} />
                 </div>
-                <div className="chart-title-section">
-                  <h2 className="chart-title">Top Programs</h2>
-                  <p className="chart-subtitle">Direct Total Fund vs Indirect Total Fund Amount by Programs</p>
+                <div className="country-funding-chart-title-section">
+                  <h2 className="country-funding-chart-title">Top Programs</h2>
+                  <p className="country-funding-chart-subtitle">Direct Total Fund vs Indirect Total Fund Amount by Programs</p>
                 </div>
               </div>
 
-              <div className="chart-content">
+              <div className="country-funding-chart-content">
                 {filteredData.actionData.length > 0 ? (
-                  <div className="vertical-bar-chart">
-                    <div className="chart-area">
-                      <div className="y-axis">
-                        {(() => {
-                          const maxValue = Math.max(...filteredData.actionData.map(d => Math.max(d.totalAmount || 0, d.indirectAmount || 0)));
-                          const steps = [maxValue, maxValue * 0.75, maxValue * 0.5, maxValue * 0.25, 0];
-                          return steps.map((value, index) => (
-                            <div key={index} className="y-axis-label">
-                              {(value / 1000000).toFixed(0)}M
-                            </div>
-                          ));
-                        })()}
-                      </div>
-                      
-                      <div className="bars-container">
-                        {filteredData.actionData.map((item, index) => {
-                          const maxValue = Math.max(...filteredData.actionData.map(d => Math.max(d.totalAmount || 0, d.indirectAmount || 0)));
-                          const totalAmount = item.totalAmount || 0;
-                          const indirectAmount = item.indirectAmount || 0;
-                          const chartHeight = 250;
-                          
-                          const actionTitle = item.actionTitle || item.title || item.name || 
-                                            item.actionName || item.programName || item.program ||
-                                            item.actionPlan || item.action || `Program ${index + 1}`;
-                          
-                          return (
-                            <div 
-                              key={index} 
-                              className="bar-group"
-                              data-title={actionTitle}
-                            >
-                              <div className="bars">
-                                <div 
-                                  className="bar total-funding"
-                                  style={{ 
-                                    height: `${Math.max(5, maxValue > 0 ? (totalAmount / maxValue) * chartHeight : 0)}px`,
-                                  }}
-                                  title={`Direct Total: €${(totalAmount / 1000000).toFixed(1)}M - ${actionTitle}`}
-                                ></div>
-                                <div 
-                                  className="bar indirect-funding"
-                                  style={{ 
-                                    height: `${Math.max(5, maxValue > 0 ? (indirectAmount / maxValue) * chartHeight : 0)}px`,
-                                  }}
-                                  title={`Indirect Total: €${(indirectAmount / 1000000).toFixed(1)}M - ${actionTitle}`}
-                                ></div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                  <div className="country-funding-recharts-container">
+                    <div className="country-funding-recharts-wrapper">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={filteredData.actionData.map((item, index) => ({
+                            name: item.actionTitle || item.title || item.name || 
+                                  item.actionName || item.programName || item.program ||
+                                  item.actionPlan || item.action || `Program ${index + 1}`,
+                            directTotal: (item.totalAmount || 0) / 1000000, // Convert to millions
+                            indirectTotal: (item.indirectAmount || 0) / 1000000 // Convert to millions
+                          }))}
+                          margin={{
+                            top: 20,
+                            right: 30,
+                            left: 20,
+                            bottom: 5,
+                          }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                          <XAxis 
+                            dataKey="name" 
+                            tick={false} // Hide x-axis labels
+                            axisLine={false}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12, fill: '#64748b' }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <Tooltip 
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="country-funding-custom-tooltip">
+                                    <div className="country-funding-tooltip-label">
+                                      {label}
+                                    </div>
+                                    {payload.map((entry, index) => (
+                                      <div key={index} className="country-funding-tooltip-item">
+                                        <div 
+                                          className="country-funding-tooltip-color"
+                                          style={{ backgroundColor: entry.color }}
+                                        ></div>
+                                        <span>
+                                          {entry.dataKey === 'directTotal' ? 'Direct Total Fund' : 'Indirect Total Fund'}: 
+                                          €{entry.value.toFixed(1)}M
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Bar 
+                            dataKey="directTotal" 
+                            fill="#1e40af" 
+                            name="Direct Total Fund"
+                            radius={[2, 2, 0, 0]}
+                          />
+                          <Bar 
+                            dataKey="indirectTotal" 
+                            fill="#3b82f6" 
+                            name="Indirect Total Fund"
+                            radius={[2, 2, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
                     
-                    <div className="bar-chart-legend">
-                      <div className="legend-item">
-                        <div className="legend-color total-funding-color"></div>
+                    <div className="country-funding-bar-chart-legend">
+                      <div className="country-funding-legend-item">
+                        <div className="country-funding-legend-color country-funding-total-funding-color"></div>
                         <span>Direct Total Fund</span>
                       </div>
-                      <div className="legend-item">
-                        <div className="legend-color indirect-funding-color"></div>
+                      <div className="country-funding-legend-item">
+                        <div className="country-funding-legend-color country-funding-indirect-funding-color"></div>
                         <span>Indirect Total Fund</span>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="no-data">No action data available</div>
+                  <div className="country-funding-no-data">No action data available</div>
                 )}
               </div>
             </div>

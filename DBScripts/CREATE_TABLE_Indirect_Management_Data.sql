@@ -6,9 +6,9 @@ IF NOT EXISTS (
 ) CREATE TABLE [Indirect_Management_Data] (
 
     ID INT IDENTITY(1,1) PRIMARY KEY,
-    [Filename] NVARCHAR(44),
-    [Agence] NVARCHAR(36),
-    [Indirect_Management_Amount] NVARCHAR(10),
+    [Filename] NVARCHAR(100),
+    [Agence] NVARCHAR(100),
+    [Indirect_Management_Amount] NVARCHAR(20),
 	 CREATED_DATE DATETIME NOT NULL DEFAULT GETDATE(),
     CREATED_BY NVARCHAR(100) NOT NULL DEFAULT 'Initial upload',
     UPDATED_DATE DATETIME,

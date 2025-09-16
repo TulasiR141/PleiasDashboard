@@ -55,7 +55,8 @@ builder.Services.AddScoped<IMIPDataRepository, MIPDataRepository>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ICADDataService, CADDataService>();
 builder.Services.AddScoped<IMIPDataService, MIPDataService>();
-
+builder.Services.AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 // Configure CORS based on environment
 builder.Services.AddCors(options =>
 {
@@ -104,7 +105,7 @@ app.UseHttpsRedirection();
 app.UseCors("ApiCorsPolicy");
 app.UseAuthorization();
 app.MapControllers();
-
+app.MapReverseProxy();
 // Log startup info
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("Starting ExpertiseFrance API in {Environment} environment", app.Environment.EnvironmentName);
