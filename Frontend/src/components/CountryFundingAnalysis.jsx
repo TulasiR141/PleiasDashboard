@@ -6,6 +6,10 @@ import '../styles/CountryFundingAnalysis.css';
 
 import { API_BASE_URL } from '../config/environment';
 
+// Shared colors for P1, P2, P3, Support
+const PIE_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b'];
+const UNKNOWN_COLOR = '#9CA3AF'; // Gray for unknown remainder
+
 // Optional mapping for Priority codes to titles. Fill with real names.
 const PRIORITY_TITLES = {
   // P1: 'Priority 1 title',
@@ -200,7 +204,7 @@ const CountryFundingAnalysis = () => {
     }
   };
 
-  // Render pie chart with legends
+  // Render a pie chart (no legend here; shared legend rendered below both charts)
   const renderPieChart = (data, title, dataKey = 'percentage') => {
     if (!data || data.length === 0) {
       return (
@@ -211,7 +215,25 @@ const CountryFundingAnalysis = () => {
       );
     }
 
-    const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
+    const getAreaCode = (areaRaw) => {
+      const code = String(areaRaw || '').trim();
+      const upper = code.toUpperCase();
+      if (upper === 'P1' || upper === 'P2' || upper === 'P3') return upper;
+      if (upper === 'SUPPORT MEASURE' || upper === 'SUPPORT_MEASURE' || upper === 'SUPPORT') return 'Support Measure';
+      if (upper === 'UNKNOWN') return 'Unknown';
+      return code || 'Unknown';
+    };
+    const getColorForArea = (area) => {
+      const a = getAreaCode(area);
+      switch (a) {
+        case 'P1': return PIE_COLORS[0];
+        case 'P2': return PIE_COLORS[1];
+        case 'P3': return PIE_COLORS[2];
+        case 'Support Measure': return PIE_COLORS[3];
+        case 'Unknown': return UNKNOWN_COLOR;
+        default: return UNKNOWN_COLOR;
+      }
+    };
     let cumulativePercentage = 0;
 
     return (
@@ -245,7 +267,7 @@ const CountryFundingAnalysis = () => {
                   <g key={index}>
                     <path
                       d={pathData}
-                      fill={colors[index % colors.length]}
+                      fill={getColorForArea(item.area)}
                       stroke="white"
                       strokeWidth="2"
                     />
@@ -267,30 +289,34 @@ const CountryFundingAnalysis = () => {
               })}
             </svg>
           </div>
-          <div className="country-funding-pie-chart-legend">
-            {data.map((item, index) => {
-              const areaRaw = item.area || item.code || `P${index + 1}`;
-              const code = String(areaRaw).trim().toUpperCase();
-              const base = /^P[1-3]$/.test(code) ? code : String(areaRaw).trim();
-              const titleFromItem = typeof item.title === 'string' ? item.title.trim() : '';
-              const mappedTitle = PRIORITY_TITLES[code];
-              const label = titleFromItem
-                ? `${base}: ${titleFromItem}`
-                : (mappedTitle && mappedTitle.trim() ? `${base}: ${mappedTitle}` : base);
-              return (
-                <div key={index} className="country-funding-legend-item">
-                  <div 
-                    className="country-funding-legend-color" 
-                    style={{ backgroundColor: colors[index % colors.length] }}
-                  ></div>
-                  <span className="country-funding-legend-text">{label}</span>
-                </div>
-              );
-            })}
-          </div>
+          {/* Legend removed here; a shared legend is rendered below both charts */}
         </div>
       </div>
     );
+  };
+
+  // Build shared legend items from either dataset, in consistent order
+  const getSharedLegendItems = () => {
+    const order = ['P1', 'P2', 'P3', 'Support Measure', 'Unknown'];
+    const proj = Array.isArray(filteredData.projected) ? filteredData.projected : [];
+    const eng = Array.isArray(filteredData.engage) ? filteredData.engage : [];
+    return order.map((code, idx) => {
+      const matchProj = proj.find(d => String(d.area || '').trim().toUpperCase() === code.toUpperCase());
+      const matchEng = eng.find(d => String(d.area || '').trim().toUpperCase() === code.toUpperCase());
+      const titleFromApi = code === 'Unknown' ? '' : ((matchProj?.title && String(matchProj.title).trim()) || (matchEng?.title && String(matchEng.title).trim()) || '');
+      const mappedTitle = PRIORITY_TITLES[code];
+      const label = code === 'Unknown'
+        ? 'Unknown'
+        : (titleFromApi ? `${code}: ${titleFromApi}` : (mappedTitle && mappedTitle.trim() ? `${code}: ${mappedTitle}` : code));
+
+      // Include only if present in at least one dataset with some value
+      const hasData = (matchProj && ((matchProj.amount ?? 0) > 0 || (matchProj.percentage ?? 0) > 0)) ||
+                      (matchEng && ((matchEng.amount ?? 0) > 0 || (matchEng.percentage ?? 0) > 0));
+      const color = code === 'Unknown'
+        ? UNKNOWN_COLOR
+        : (code === 'P1' ? PIE_COLORS[0] : code === 'P2' ? PIE_COLORS[1] : code === 'P3' ? PIE_COLORS[2] : PIE_COLORS[3]);
+      return hasData ? { label, color } : null;
+    }).filter(Boolean);
   };
 
   // Render progress bar
@@ -407,6 +433,18 @@ const CountryFundingAnalysis = () => {
               <div className="country-funding-pie-charts-container">
                 {renderPieChart(filteredData.projected, "Projected Amount")}
                 {renderPieChart(filteredData.engage, "Engaged Amount")}
+              </div>
+              <div className="country-funding-shared-legend">
+                {getSharedLegendItems().length > 0 ? (
+                  getSharedLegendItems().map((item, idx) => (
+                    <div key={idx} className="country-funding-legend-item">
+                      <div className="country-funding-legend-color" style={{ backgroundColor: item.color }}></div>
+                      <span className="country-funding-legend-text">{item.label}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="country-funding-no-data">No legend data</div>
+                )}
               </div>
             </div>
           </div>

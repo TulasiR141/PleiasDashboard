@@ -9,7 +9,6 @@ const TopDataTables = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [cadCount, setCadCount] = useState('10');
-  const [departmentCount, setDepartmentCount] = useState('10');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,6 +52,7 @@ const TopDataTables = () => {
   };
 
   const getTopDepartmentItems = () => {
+    const departmentCount = 'All'; // Always show all departments
     if (departmentCount === 'All') {
       return topDepartmentData;
     }
@@ -144,20 +144,6 @@ const TopDataTables = () => {
             <div className="top-data-table-title-section">
               <h2 className="top-data-table-title">Top Departments</h2>
               <p className="top-data-table-subtitle">Most frequently used departments across action plans</p>
-            </div>
-            <div className="top-data-table-filter">
-              <label>Show top: </label>
-              <select
-                value={departmentCount}
-                onChange={(e) => setDepartmentCount(e.target.value)}
-                className="top-data-count-select"
-              >
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="15">15</option>
-                <option value="20">20</option>
-                <option value="All">All</option>
-              </select>
             </div>
           </div>
 

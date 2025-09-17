@@ -164,7 +164,7 @@
 
 .top-data-grid-row {
   display: grid;
-  grid-template-columns: 2fr 100px; /* Same as header */
+  grid-template-columns: 2fr calc(100px - 6px); /* Adjust for scrollbar */
   border-bottom: 1px solid #e2e8f0;
 }
 

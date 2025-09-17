@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Dapper;
 using ExpertiseFrance.Core.Models;
+using System.Linq;
 using ExpertiseFrance.Core.Interfaces.Repositories;
 
 namespace ExpertiseFrance.Infrastructure.Repositories
@@ -141,6 +142,75 @@ namespace ExpertiseFrance.Infrastructure.Repositories
             var cadData = await connection.QueryAsync<ProjectCadData>(cadQuery);
             var actionData = await connection.QueryAsync<ActionData>(actionQuery);
 
+            // Build totals per country/yearRange from PROJECTS total amount column
+            var totalsRows = await connection.QueryAsync(
+                @"WITH Totals AS (
+                        SELECT COUNTRY, '2021-2024' AS YearRange, ISNULL(SUM(CASE WHEN [YEAR] BETWEEN 2021 AND 2024 THEN [COLUMN_1_3_1_TOTAL_AMOUNT] ELSE 0 END),0) AS Total
+                        FROM PROJECTS GROUP BY COUNTRY
+                        UNION ALL
+                        SELECT COUNTRY, '2025-2027' AS YearRange, ISNULL(SUM(CASE WHEN [YEAR] BETWEEN 2025 AND 2027 THEN [COLUMN_1_3_1_TOTAL_AMOUNT] ELSE 0 END),0) AS Total
+                        FROM PROJECTS GROUP BY COUNTRY
+                        UNION ALL
+                        SELECT COUNTRY, '2021-2027' AS YearRange, ISNULL(SUM(CASE WHEN [YEAR] BETWEEN 2021 AND 2027 THEN [COLUMN_1_3_1_TOTAL_AMOUNT] ELSE 0 END),0) AS Total
+                        FROM PROJECTS GROUP BY COUNTRY
+                    )
+                  SELECT COUNTRY, YearRange, Total FROM Totals");
+
+            var totalByKey = new Dictionary<(string Country, string YearRange), decimal>(new EngagedKeyComparer());
+            foreach (var row in totalsRows)
+            {
+                string c = (string)(row.COUNTRY ?? string.Empty);
+                string yr = (string)(row.YearRange ?? string.Empty);
+                if (string.IsNullOrWhiteSpace(c) || string.IsNullOrWhiteSpace(yr)) continue;
+                decimal tot = 0m;
+                try { tot = (decimal)row.Total; } catch { tot = Convert.ToDecimal(row.Total ?? 0m); }
+                totalByKey[(c.Trim(), yr.Trim())] = tot;
+            }
+
+            // Recompute engage percentages against true totals and add 'Unknown' slice when needed
+            var engageGroups = engageData
+                .Where(it => it != null && !string.IsNullOrWhiteSpace(it.Country) && !string.IsNullOrWhiteSpace(it.YearRange))
+                .GroupBy(it => (Country: it.Country.Trim(), YearRange: it.YearRange.Trim()));
+
+            var unknownItems = new List<ChartDataItem>();
+            foreach (var grp in engageGroups)
+            {
+                var key = (grp.Key.Country, grp.Key.YearRange);
+                if (!totalByKey.TryGetValue(key, out var total) || total <= 0m)
+                {
+                    // No total available; skip recompute
+                    continue;
+                }
+
+                decimal knownSum = grp.Sum(x => x.Amount);
+                // Recompute percentages for known areas
+                foreach (var item in grp)
+                {
+                    item.Percentage = total == 0m ? 0m : Math.Round((item.Amount * 100m) / total, 2, MidpointRounding.AwayFromZero);
+                }
+
+                decimal unknown = total - knownSum;
+                if (unknown > 0m)
+                {
+                    var unknownItem = new ChartDataItem
+                    {
+                        Country = grp.Key.Country,
+                        YearRange = grp.Key.YearRange,
+                        Area = "Unknown",
+                        Title = null,
+                        Amount = Math.Round(unknown, 2, MidpointRounding.AwayFromZero),
+                        Percentage = Math.Round((unknown * 100m) / total, 2, MidpointRounding.AwayFromZero)
+                    };
+                    unknownItems.Add(unknownItem);
+                }
+            }
+
+            if (unknownItems.Count > 0)
+            {
+                // Append unknown items to engageData
+                engageData = engageData.Concat(unknownItems).ToList();
+            }
+
             return new CountryChartDataResponse
             {
                 Engage = engageData.ToList(),
@@ -155,49 +225,65 @@ namespace ExpertiseFrance.Infrastructure.Repositories
 
             };
         }
-      public async Task<Section3ChartsDataResponse> GetSection3ChartsDataAsync(string yearRange = null, string category = null)
-{
-    using var connection = new SqlConnection(_connectionString);
+        public async Task<Section3ChartsDataResponse> GetSection3ChartsDataAsync(string yearRange = null, string category = null)
+        {
+            using var connection = new SqlConnection(_connectionString);
 
-    try
+            try
+            {
+                var response = new Section3ChartsDataResponse();
+
+                // Prepare parameters
+                var parameters = new DynamicParameters();
+                if (!string.IsNullOrEmpty(yearRange))
+                    parameters.Add("@YearRang", yearRange);
+                if (!string.IsNullOrEmpty(category))
+                    parameters.Add("@Category", category);
+
+                // Execute Top Countries query
+                var topCountriesData = await connection.QueryAsync<TopCountryData>(
+                    "EXEC SP_GET_TOP_COUNTRIES_DATA_BY_CAD @YearRang, @Category",
+                    parameters
+                );
+                response.TopCountries = topCountriesData.ToList();
+
+                // Execute Top Programs query
+                var topProgramsData = await connection.QueryAsync<TopProgramData>(
+                    "EXEC SP_GetTopPrograms @YearRang, @Category",
+                    parameters
+                );
+                response.TopPrograms = topProgramsData.ToList();
+
+                // Execute Top Agencies query
+                var topAgenciesData = await connection.QueryAsync<TopAgencyData>(
+                    "EXEC SP_GET_TOP_AGENCIES @YearRang, @Category",
+                    parameters
+                );
+                response.TopAgencies = topAgenciesData.ToList();
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error executing chart data queries: {ex.Message}", ex);
+            } }
+
+    internal class EngagedKeyComparer : IEqualityComparer<(string Country, string YearRange)>
     {
-        var response = new Section3ChartsDataResponse();
+        public bool Equals((string Country, string YearRange) x, (string Country, string YearRange) y)
+        {
+            return string.Equals(x.Country, y.Country, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(x.YearRange, y.YearRange, StringComparison.OrdinalIgnoreCase);
+        }
 
-        // Prepare parameters
-        var parameters = new DynamicParameters();
-        if (!string.IsNullOrEmpty(yearRange))
-            parameters.Add("@YearRang", yearRange);
-        if (!string.IsNullOrEmpty(category))
-            parameters.Add("@Category", category);
-
-        // Execute Top Countries query
-        var topCountriesData = await connection.QueryAsync<TopCountryData>(
-            "EXEC SP_GET_TOP_COUNTRIES_DATA_BY_CAD @YearRang, @Category", 
-            parameters
-        );
-        response.TopCountries = topCountriesData.ToList();
-
-        // Execute Top Programs query
-        var topProgramsData = await connection.QueryAsync<TopProgramData>(
-            "EXEC SP_GetTopPrograms @YearRang, @Category", 
-            parameters
-        );
-        response.TopPrograms = topProgramsData.ToList();
-
-        // Execute Top Agencies query
-        var topAgenciesData = await connection.QueryAsync<TopAgencyData>(
-            "EXEC SP_GET_TOP_AGENCIES @YearRang, @Category", 
-            parameters
-        );
-        response.TopAgencies = topAgenciesData.ToList();
-
-        return response;
+        public int GetHashCode((string Country, string YearRange) obj)
+        {
+            var c = obj.Country?.ToUpperInvariant() ?? string.Empty;
+            var y = obj.YearRange?.ToUpperInvariant() ?? string.Empty;
+            return HashCode.Combine(c, y);
+        }
     }
-    catch (Exception ex)
-    {
-        throw new Exception($"Error executing chart data queries: {ex.Message}", ex);
-    }
-}
+
 
         public async Task<IEnumerable<TopCADData>> GetGlobalTopCADAsync()
         {

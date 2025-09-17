@@ -1,0 +1,57 @@
+# Visual Studio
+.vs/
+
+# Build results
+[Bb]in/
+[Oo]bj/
+obj/
+[Ll]og/
+[Tt]emp/
+
+# Build artifacts
+*.exe
+*.dll
+*.pdb
+*.cache
+*.log
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# NuGet packages
+*.nupkg
+*.snupkg
+*.nuspec
+*.psmdcp
+*.xml
+*.dll.config
+packages/
+
+# Resharper / Rider
+_ReSharper*/
+*.DotSettings.user
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# Other
+*.dbmdl
+*.bak
+*.backup
+*.mdf
+*.ldf
+
+# Test results
+[Tt]est[Rr]esult*/
+*.VisualState.xml
+*.trx
+
+# Publish
+publish/
+*.pubxml
+*.publishproj
+
+# Generated files
+Generated\ Files/
