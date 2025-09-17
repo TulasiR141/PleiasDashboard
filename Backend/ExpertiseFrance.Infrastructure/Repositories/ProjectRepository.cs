@@ -97,21 +97,56 @@ namespace ExpertiseFrance.Infrastructure.Repositories
 
                 var whereClause = whereConditions.Count > 0 ? "WHERE " + string.Join(" AND ", whereConditions) : "";
 
-                // Top Countries Query
+                // Top Countries Query with MIP projected amounts
+                string mipAmountColumns = "";
+                if (yearRange == "2021-2024")
+                {
+                    mipAmountColumns = "ISNULL(SUPPORT_MEASURES_AMOUNT_21_24, 0) + ISNULL(P1_AMOUNT_21_24, 0) + ISNULL(P2_AMOUNT_21_24, 0) + ISNULL(P3_AMOUNT_21_24, 0)";
+                }
+                else if (yearRange == "2025-2027")
+                {
+                    mipAmountColumns = "ISNULL(SUPPORT_MEASURES_AMOUNT_25_27, 0) + ISNULL(P1_AMOUNT_25_27, 0) + ISNULL(P2_AMOUNT_25_27, 0) + ISNULL(P3_AMOUNT_25_27, 0)";
+                }
+                else // 2021-2027 or default
+                {
+                    mipAmountColumns = "ISNULL(SUPPORT_MEASURES_AMOUNT_21_24, 0) + ISNULL(P1_AMOUNT_21_24, 0) + ISNULL(P2_AMOUNT_21_24, 0) + ISNULL(P3_AMOUNT_21_24, 0) + ISNULL(SUPPORT_MEASURES_AMOUNT_25_27, 0) + ISNULL(P1_AMOUNT_25_27, 0) + ISNULL(P2_AMOUNT_25_27, 0) + ISNULL(P3_AMOUNT_25_27, 0)";
+                }
+
                 var topCountriesQuery = $@"
                     SELECT TOP 10
-                        p.COUNTRY as Country,
-                        SUM(CAST(p.COLUMN_1_3_1_TOTAL_AMOUNT as BIGINT)) as EngagedAmount,
-                        0 as ProjectedAmount,
+                        ISNULL(engaged.Country, projected.Country) as Country,
+                        ISNULL(engaged.EngagedAmount, 0) as EngagedAmount,
+                        ISNULL(projected.ProjectedAmount, 0) as ProjectedAmount,
                         @YearRange as YearRange,
                         @Category as Category
-                    FROM PROJECTS p
-                    INNER JOIN CAD c ON p.FILENAME = c.FILENAME
-                    INNER JOIN DEPARTMENTS d ON p.FILENAME = d.FILENAME
-                    {whereClause}
-                    AND p.COUNTRY IS NOT NULL
-                    GROUP BY p.COUNTRY
-                    ORDER BY EngagedAmount DESC";
+                    FROM (
+                        SELECT
+                            Country,
+                            SUM(EngagedAmount) as EngagedAmount
+                        FROM (
+                            SELECT DISTINCT
+                                p.COUNTRY as Country,
+                                p.FILENAME,
+                                CASE WHEN ISNUMERIC(p.COLUMN_1_3_1_TOTAL_AMOUNT) = 1
+                                     THEN CAST(p.COLUMN_1_3_1_TOTAL_AMOUNT as BIGINT)
+                                     ELSE 0 END as EngagedAmount
+                            FROM PROJECTS p
+                            INNER JOIN CAD c ON p.FILENAME = c.FILENAME
+                            INNER JOIN DEPARTMENTS d ON p.FILENAME = d.FILENAME
+                            {whereClause}
+                            AND p.COUNTRY IS NOT NULL
+                        ) uniqueProjects
+                        GROUP BY Country
+                    ) engaged
+                    FULL OUTER JOIN (
+                        SELECT
+                            m.COUNTRY as Country,
+                            SUM({mipAmountColumns}) as ProjectedAmount
+                        FROM MIP_DATA m
+                        WHERE m.COUNTRY IS NOT NULL
+                        GROUP BY m.COUNTRY
+                    ) projected ON engaged.Country = projected.Country
+                    ORDER BY ISNULL(engaged.EngagedAmount, 0) DESC";
 
                 parameters.Add("@YearRange", yearRange ?? "");
                 parameters.Add("@Category", category ?? "");
@@ -123,7 +158,9 @@ namespace ExpertiseFrance.Infrastructure.Repositories
                 var topProgramsQuery = $@"
                     SELECT DISTINCT TOP 10
                         p.ACTION_TITLE as Program,
-                        CAST(p.COLUMN_1_3_1_TOTAL_AMOUNT as BIGINT) as TotalAmount,
+                        CASE WHEN ISNUMERIC(p.COLUMN_1_3_1_TOTAL_AMOUNT) = 1
+                             THEN CAST(p.COLUMN_1_3_1_TOTAL_AMOUNT as BIGINT)
+                             ELSE 0 END as TotalAmount,
                         @Category as Category,
                         @YearRange as YearRange
                     FROM PROJECTS p
