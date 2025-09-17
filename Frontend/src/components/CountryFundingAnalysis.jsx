@@ -266,14 +266,7 @@ const CountryFundingAnalysis = () => {
 
   // Render a pie chart (no legend here; shared legend rendered below both charts)
   const renderPieChart = (data, title, dataKey = 'percentage', chartId = '') => {
-    if (!data || data.length === 0) {
-      return (
-        <div className="country-funding-pie-chart-container">
-          <h4 className="country-funding-pie-chart-title">{title}</h4>
-          <div className="country-funding-no-data">No data available</div>
-        </div>
-      );
-    }
+    if (!data || data.length === 0) return null;
 
     const getAreaCode = (areaRaw) => {
       const code = String(areaRaw || '').trim();
@@ -295,6 +288,8 @@ const CountryFundingAnalysis = () => {
       }
     };
     let cumulativePercentage = 0;
+    const nonZero = data.filter(d => (d[dataKey] || 0) > 0);
+    const sumPct = data.reduce((s, d) => s + (d[dataKey] || 0), 0);
 
     return (
       <div className="country-funding-pie-chart-container">
@@ -302,7 +297,35 @@ const CountryFundingAnalysis = () => {
         <div className="country-funding-pie-chart-content">
           <div className="country-funding-pie-chart-wrapper">
             <svg width="200" height="200" viewBox="0 0 200 200">
-              {data.map((item, index) => {
+              {nonZero.length === 1 && Math.abs(sumPct - 100) < 0.01 ? (
+                <g
+                  onMouseEnter={() => {
+                    const it = nonZero[0];
+                    setPieHover({
+                      visible: true,
+                      chartId,
+                      label: it.title ? `${it.area}: ${it.title}` : it.area,
+                      amount: it.amount || 0,
+                      percentage: it[dataKey] || 100,
+                    });
+                  }}
+                  onMouseLeave={() => setPieHover(prev => prev.chartId === chartId ? { ...prev, visible: false } : prev)}
+                >
+                  <circle cx="100" cy="100" r="80" fill={getColorForArea(nonZero[0].area)} />
+                  <text
+                    x={100}
+                    y={100}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill="white"
+                    fontSize="13"
+                    fontWeight="700"
+                  >
+                    100%
+                  </text>
+                </g>
+              ) : (
+                data.map((item, index) => {
                 const percentage = item[dataKey] || 0;
                 const startAngle = (cumulativePercentage / 100) * 360;
                 const endAngle = ((cumulativePercentage + percentage) / 100) * 360;
@@ -358,7 +381,8 @@ const CountryFundingAnalysis = () => {
                     )}
                   </g>
                 );
-              })}
+                })
+              )}
             </svg>
             {pieHover.visible && pieHover.chartId === chartId && (
               <div className="country-funding-pie-tooltip">
@@ -515,8 +539,19 @@ const CountryFundingAnalysis = () => {
 
             <div className="country-funding-chart-content">
               <div className="country-funding-pie-charts-container">
-                {renderPieChart(filteredData.projected, "Projected Amount", 'percentage', 'projected')}
-                {renderPieChart(filteredData.engage, "Engaged Amount", 'percentage', 'engage')}
+                {(() => {
+                  const hasProjected = Array.isArray(filteredData.projected) && filteredData.projected.some(i => (i.amount || 0) > 0 || (i.percentage || 0) > 0);
+                  const hasEngage = Array.isArray(filteredData.engage) && filteredData.engage.some(i => (i.amount || 0) > 0 || (i.percentage || 0) > 0);
+                  return (
+                    <>
+                      {hasProjected && renderPieChart(filteredData.projected, "Projected Amount", 'percentage', 'projected')}
+                      {hasEngage && renderPieChart(filteredData.engage, "Engaged Amount", 'percentage', 'engage')}
+                      {!hasProjected && !hasEngage && (
+                        <div className="country-funding-no-data">No pie data available</div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
               <div className="country-funding-shared-legend">
                 {getSharedLegendItems().length > 0 ? (

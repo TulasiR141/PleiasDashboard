@@ -121,9 +121,9 @@ namespace ExpertiseFrance.Infrastructure.Repositories
 
                 // Top Programs Query
                 var topProgramsQuery = $@"
-                    SELECT TOP 10
+                    SELECT DISTINCT TOP 10
                         p.ACTION_TITLE as Program,
-                        SUM(CAST(p.COLUMN_1_3_1_TOTAL_AMOUNT as BIGINT)) as TotalAmount,
+                        CAST(p.COLUMN_1_3_1_TOTAL_AMOUNT as BIGINT) as TotalAmount,
                         @Category as Category,
                         @YearRange as YearRange
                     FROM PROJECTS p
@@ -131,7 +131,6 @@ namespace ExpertiseFrance.Infrastructure.Repositories
                     INNER JOIN DEPARTMENTS d ON p.FILENAME = d.FILENAME
                     {whereClause}
                     AND p.ACTION_TITLE IS NOT NULL
-                    GROUP BY p.ACTION_TITLE
                     ORDER BY TotalAmount DESC";
 
                 var topProgramsData = await connection.QueryAsync<TopProgramData>(topProgramsQuery, parameters);
