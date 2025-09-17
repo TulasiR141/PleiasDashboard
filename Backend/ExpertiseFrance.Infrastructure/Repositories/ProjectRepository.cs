@@ -68,27 +68,95 @@ namespace ExpertiseFrance.Infrastructure.Repositories
             try
             {
                 var response = new Section3ChartsDataResponse();
-                var parameters = new DynamicParameters();
-                if (!string.IsNullOrEmpty(yearRange)) parameters.Add("@YearRang", yearRange);
-                if (!string.IsNullOrEmpty(category)) parameters.Add("@Category", category);
-                if (!string.IsNullOrEmpty(department)) parameters.Add("@Department", department);
 
-                var topCountriesData = await connection.QueryAsync<TopCountryData>(
-                    "EXEC SP_GET_TOP_COUNTRIES_DATA_BY_CAD @YearRang, @Category, @Department",
-                    parameters
-                );
+                // Build WHERE clauses based on filters
+                var whereConditions = new List<string>();
+                var parameters = new DynamicParameters();
+
+                if (!string.IsNullOrEmpty(yearRange))
+                {
+                    if (yearRange == "2021-2024")
+                        whereConditions.Add("p.YEAR BETWEEN 2021 AND 2024");
+                    else if (yearRange == "2025-2027")
+                        whereConditions.Add("p.YEAR BETWEEN 2025 AND 2027");
+                    else if (yearRange == "2021-2027")
+                        whereConditions.Add("p.YEAR BETWEEN 2021 AND 2027");
+                }
+
+                if (!string.IsNullOrEmpty(category))
+                {
+                    whereConditions.Add("c.CATEGORY = @Category");
+                    parameters.Add("@Category", category);
+                }
+
+                if (!string.IsNullOrEmpty(department))
+                {
+                    whereConditions.Add("d.DEPARTMENT_NAME = @Department");
+                    parameters.Add("@Department", department);
+                }
+
+                var whereClause = whereConditions.Count > 0 ? "WHERE " + string.Join(" AND ", whereConditions) : "";
+
+                // Top Countries Query
+                var topCountriesQuery = $@"
+                    SELECT TOP 10
+                        p.COUNTRY as Country,
+                        SUM(CAST(p.COLUMN_1_3_1_TOTAL_AMOUNT as BIGINT)) as EngagedAmount,
+                        0 as ProjectedAmount,
+                        @YearRange as YearRange,
+                        @Category as Category
+                    FROM PROJECTS p
+                    INNER JOIN CAD c ON p.FILENAME = c.FILENAME
+                    INNER JOIN DEPARTMENTS d ON p.FILENAME = d.FILENAME
+                    {whereClause}
+                    AND p.COUNTRY IS NOT NULL
+                    GROUP BY p.COUNTRY
+                    ORDER BY EngagedAmount DESC";
+
+                parameters.Add("@YearRange", yearRange ?? "");
+                parameters.Add("@Category", category ?? "");
+
+                var topCountriesData = await connection.QueryAsync<TopCountryData>(topCountriesQuery, parameters);
                 response.TopCountries = topCountriesData.ToList();
 
-                var topProgramsData = await connection.QueryAsync<TopProgramData>(
-                    "EXEC SP_GetTopPrograms @YearRang, @Category, @Department",
-                    parameters
-                );
+                // Top Programs Query
+                var topProgramsQuery = $@"
+                    SELECT TOP 10
+                        p.ACTION_TITLE as Program,
+                        SUM(CAST(p.COLUMN_1_3_1_TOTAL_AMOUNT as BIGINT)) as TotalAmount,
+                        @Category as Category,
+                        @YearRange as YearRange
+                    FROM PROJECTS p
+                    INNER JOIN CAD c ON p.FILENAME = c.FILENAME
+                    INNER JOIN DEPARTMENTS d ON p.FILENAME = d.FILENAME
+                    {whereClause}
+                    AND p.ACTION_TITLE IS NOT NULL
+                    GROUP BY p.ACTION_TITLE
+                    ORDER BY TotalAmount DESC";
+
+                var topProgramsData = await connection.QueryAsync<TopProgramData>(topProgramsQuery, parameters);
                 response.TopPrograms = topProgramsData.ToList();
 
-                var topAgenciesData = await connection.QueryAsync<TopAgencyData>(
-                    "EXEC SP_GET_TOP_AGENCIES @YearRang, @Category, @Department",
-                    parameters
-                );
+                // Top Agencies Query
+                var topAgenciesQuery = $@"
+                    SELECT TOP 10
+                        @YearRange as YearRange,
+                        imd.Agence as Agency,
+                        @Category as Category,
+                        SUM(CASE WHEN ISNUMERIC(REPLACE(imd.Indirect_Management_Amount, ' ', '')) = 1
+                                 THEN CAST(REPLACE(imd.Indirect_Management_Amount, ' ', '') as BIGINT)
+                                 ELSE 0 END) as IndirectAmount,
+                        COUNT(DISTINCT p.FILENAME) as ProjectCount
+                    FROM PROJECTS p
+                    INNER JOIN CAD c ON p.FILENAME = c.FILENAME
+                    INNER JOIN DEPARTMENTS d ON p.FILENAME = d.FILENAME
+                    INNER JOIN Indirect_Management_Data imd ON p.FILENAME = imd.Filename
+                    {whereClause}
+                    AND imd.Agence IS NOT NULL
+                    GROUP BY imd.Agence
+                    ORDER BY IndirectAmount DESC";
+
+                var topAgenciesData = await connection.QueryAsync<TopAgencyData>(topAgenciesQuery, parameters);
                 response.TopAgencies = topAgenciesData.ToList();
 
                 return response;

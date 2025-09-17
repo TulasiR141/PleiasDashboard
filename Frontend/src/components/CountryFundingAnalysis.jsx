@@ -31,8 +31,18 @@ const CountryFundingAnalysis = () => {
   const [loading, setLoading] = useState(true);
   const [chart2Count, setChart2Count] = useState('7');
   const [isExporting, setIsExporting] = useState(false);
+  const [pieHover, setPieHover] = useState({ visible: false, chartId: '', label: '', amount: 0, percentage: 0 });
 
   const yearRangeOptions = ['2021-2024', '2025-2027', '2021-2027'];
+
+  const formatAmount = (value) => {
+    const n = Number(value || 0);
+    const abs = Math.abs(n);
+    if (abs >= 1_000_000_000) return `€${(n / 1_000_000_000).toFixed(2)}B`;
+    if (abs >= 1_000_000) return `€${(n / 1_000_000).toFixed(2)}M`;
+    if (abs >= 1_000) return `€${(n / 1_000).toFixed(2)}K`;
+    return `€${n.toFixed(0)}`;
+  };
 
   // Navigation handler
   const handleNavigation = (page) => {
@@ -90,7 +100,7 @@ const CountryFundingAnalysis = () => {
   useEffect(() => {
     const fetchCountryData = async (country) => {
       try {
-        setLoading(true);
+        // setLoading(true);
         const norm = await fetch(`${API_BASE_URL}/api/Projects/section2charts-normalized/country/${encodeURIComponent(country)}`);
         if (!norm.ok) throw new Error(`Country norm HTTP error! status: ${norm.status}`);
         const normalized = await norm.json();
@@ -111,11 +121,6 @@ const CountryFundingAnalysis = () => {
   useEffect(() => {
   if (!normalizedData) return;
 
-    const toAreaLabel = (key) => {
-      if (key === 'SupportMeasure') return 'Support Measure';
-      if (key === 'Unknown') return 'Unknown';
-      return key; // P1/P2/P3
-    };
 
     const buildSlicesFromNormalized = (norm, which, yearRange) => {
       if (!norm) return [];
@@ -146,12 +151,19 @@ const CountryFundingAnalysis = () => {
           percentage: percent
         };
       });
+      // Drop P2/P3 if their title is null/empty (country has no P2/P3)
+      const filtered = items.filter(it => {
+        if (it.area === 'P2' || it.area === 'P3') {
+          return !!it.title; // keep only if title exists
+        }
+        return true; // keep P1, Support Measure, Unknown
+      });
       // For 2021-2027 recompute percentages from amounts
       if (yearRange === '2021-2027') {
-        const total = items.reduce((s, it) => s + (it.amount || 0), 0);
-        return total > 0 ? items.map(it => ({ ...it, percentage: (it.amount * 100) / total })) : items;
+        const total = filtered.reduce((s, it) => s + (it.amount || 0), 0);
+        return total > 0 ? filtered.map(it => ({ ...it, percentage: (it.amount * 100) / total })) : filtered;
       }
-      return items;
+      return filtered;
     };
 
     const filteredByYear = (list) => (list || []).filter(item => item.yearRange === filters.yearRange && (!filters.country || item.country === filters.country));
@@ -253,7 +265,7 @@ const CountryFundingAnalysis = () => {
   };
 
   // Render a pie chart (no legend here; shared legend rendered below both charts)
-  const renderPieChart = (data, title, dataKey = 'percentage') => {
+  const renderPieChart = (data, title, dataKey = 'percentage', chartId = '') => {
     if (!data || data.length === 0) {
       return (
         <div className="country-funding-pie-chart-container">
@@ -312,7 +324,19 @@ const CountryFundingAnalysis = () => {
                 cumulativePercentage += percentage;
                 
                 return (
-                  <g key={index}>
+                  <g
+                    key={index}
+                    onMouseEnter={() => {
+                      setPieHover({
+                        visible: true,
+                        chartId,
+                        label: item.title ? `${item.area}: ${item.title}` : item.area,
+                        amount: item.amount || 0,
+                        percentage: percentage || 0,
+                      });
+                    }}
+                    onMouseLeave={() => setPieHover(prev => prev.chartId === chartId ? { ...prev, visible: false } : prev)}
+                  >
                     <path
                       d={pathData}
                       fill={getColorForArea(item.area)}
@@ -336,6 +360,19 @@ const CountryFundingAnalysis = () => {
                 );
               })}
             </svg>
+            {pieHover.visible && pieHover.chartId === chartId && (
+              <div className="country-funding-pie-tooltip">
+                <div className="country-funding-tooltip-label">{pieHover.label}</div>
+                <div className="country-funding-tooltip-item">
+                  <div className="country-funding-tooltip-color"></div>
+                  <span>Amount: {formatAmount(pieHover.amount)}</span>
+                </div>
+                <div className="country-funding-tooltip-item">
+                  <div className="country-funding-tooltip-color"></div>
+                  <span>Percentage: {pieHover.percentage.toFixed(2)}%</span>
+                </div>
+              </div>
+            )}
           </div>
           {/* Legend removed here; a shared legend is rendered below both charts */}
         </div>
@@ -478,8 +515,8 @@ const CountryFundingAnalysis = () => {
 
             <div className="country-funding-chart-content">
               <div className="country-funding-pie-charts-container">
-                {renderPieChart(filteredData.projected, "Projected Amount")}
-                {renderPieChart(filteredData.engage, "Engaged Amount")}
+                {renderPieChart(filteredData.projected, "Projected Amount", 'percentage', 'projected')}
+                {renderPieChart(filteredData.engage, "Engaged Amount", 'percentage', 'engage')}
               </div>
               <div className="country-funding-shared-legend">
                 {getSharedLegendItems().length > 0 ? (

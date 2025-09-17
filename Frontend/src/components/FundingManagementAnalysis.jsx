@@ -18,17 +18,19 @@ import { API_BASE_URL } from '../config/environment';
 // List of agencies to ignore (case-insensitive). Keep empty by default.
 const AGENCIES_TO_IGNORE = [
     "International Organization", "Entrusted Entity", "Pillar Assessed Entity", "European Financial Institution", "Lead Finance Institution", "Member State Agency", "Member State Organisation(S)", "Member States Organisation",
-    "International Organization", "Un", "Lead Finance Institution (Via The Aip)", "Lead Finance Institutions (Via The Aip)", "Member State Organisation", "Member State Agency", "Pillar", "Eu Member State Organisation",
-    "Entity Whose Pillars Have Been Evaluated", "Third Donor Country Agency", "Lead Finance Institutions Identified In The Appendix To This Action Document", "Eu Ms Organisation", "Trusted Entity", "Member State Organisation Or An International Organization", "Ms Organization Or International Organization", "Partner Country"
+    "International Organisation", "Un", "Lead Finance Institution (Via The Aip)", "Lead Finance Institutions (Via The Aip)", "Member State Organisation", "Member State Agency", "Pillar", "Eu Member State Organisation",
+    "Entity Whose Pillars Have Been Evaluated", "Third Donor Country Agency", "Lead Finance Institutions Identified In The Appendix To This Action Document", "Eu Ms Organisation", "Trusted Entity", "Member State Organisation Or An International Organization", "Ms Organization Or International Organization", "Partner Country",
   ];
 const FundingManagementAnalysis = () => {
   const navigate = useNavigate();
   
   const [filters, setFilters] = useState({
     yearRange: '2021-2024',
-    category: ''
+    category: 'All',
+    department: ''
   });
   const [categories, setCategories] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [chartData, setChartData] = useState({
     topCountries: [],
     topPrograms: [],
@@ -37,17 +39,19 @@ const FundingManagementAnalysis = () => {
   const [loading, setLoading] = useState(true);
   const [chartsLoading, setChartsLoading] = useState(false);
 
-  // Load categories on component mount
+  // Load categories and departments on component mount
   useEffect(() => {
     fetchCategories();
+    fetchDepartments();
   }, []);
 
   // Load charts data when filters change
   useEffect(() => {
-    if (filters.category) {
+    // Load data when category is set (including empty string for "All")
+    if (filters.category !== null && filters.category !== undefined) {
       fetchChartsData();
     }
-  }, [filters.yearRange, filters.category]);
+  }, [filters.yearRange, filters.category, filters.department]);
 
   const fetchCategories = async () => {
     try {
@@ -63,18 +67,18 @@ const FundingManagementAnalysis = () => {
             return String(item.category);
           }
           // If item is already a string, use it directly
-          return String(item);
-        }).filter(cat => cat && cat !== 'null' && cat !== 'undefined');
+          if (typeof item === 'string') {
+            return item;
+          }
+          // Skip objects that don't have the expected structure
+          return null;
+        }).filter(cat => cat && cat !== 'null' && cat !== 'undefined' && cat.toLowerCase() !== 'null' && cat !== '[object Object]');
       }
       
       setCategories(categoriesArray);
-      
-      // Set first category as default
+      // Set "All" as default category
       if (categoriesArray.length > 0) {
-        setFilters(prev => ({
-          ...prev,
-          category: categoriesArray[0]
-        }));
+        setFilters(prev => ({ ...prev, category: 'All' }));
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -83,14 +87,42 @@ const FundingManagementAnalysis = () => {
     }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/Projects/departments`);
+      const data = await response.json();
+
+      // Extract departments array (should already be an array of strings)
+      let departmentsArray = [];
+      if (Array.isArray(data)) {
+        departmentsArray = data.filter(dep =>
+          dep &&
+          typeof dep === 'string' &&
+          dep !== 'null' &&
+          dep !== 'undefined' &&
+          dep.toLowerCase() !== 'null' &&
+          dep !== '[object Object]'
+        );
+      }
+
+      setDepartments(departmentsArray);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      setDepartments([]);
+    }
+  };
+
   const fetchChartsData = async () => {
-    if (!filters.category) return;
-    
     setChartsLoading(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/Projects/section3charts?yearRange=${filters.yearRange}&category=${encodeURIComponent(filters.category)}`
-      );
+      let url = `${API_BASE_URL}/api/Projects/section3charts?yearRange=${filters.yearRange}`;
+      if (filters.category && filters.category !== 'All') {
+        url += `&category=${encodeURIComponent(filters.category)}`;
+      }
+      if (filters.department) {
+        url += `&department=${encodeURIComponent(filters.department)}`;
+      }
+      const response = await fetch(url);
       const data = await response.json();
       
       // Ensure data structure is valid with proper validation
@@ -233,9 +265,9 @@ const FundingManagementAnalysis = () => {
           
           <nav className="navigation">
             <a href="#" className="nav-link" onClick={() => handleNavigation('home')}>Home</a>
-            <a href="#" className="nav-link" onClick={() => handleNavigation('global')}>Sectors</a>
-            <a href="#" className="nav-link" onClick={() => handleNavigation('country')}>Countries</a>
-            <a href="#" className="nav-link active" onClick={() => handleNavigation('funding')}>Funding Flows</a>
+            <a href="#" className="nav-link" onClick={() => handleNavigation('global')}>Global Funding Landscape</a>
+            <a href="#" className="nav-link" onClick={() => handleNavigation('country')}>Country Funding Analysis</a>
+            <a href="#" className="nav-link active" onClick={() => handleNavigation('funding')}>Funding Management Analysis</a>
           </nav>
         </div>
       </header>
@@ -263,7 +295,7 @@ const FundingManagementAnalysis = () => {
 
           <div className="filter-group">
             <label className="filter-label">Category Filter</label>
-            <select 
+            <select
               className="filter-select"
               value={filters.category}
               onChange={(e) => handleFilterChange('category', e.target.value)}
@@ -272,9 +304,33 @@ const FundingManagementAnalysis = () => {
               {categories.length === 0 ? (
                 <option>Loading categories...</option>
               ) : (
-                categories.map((category, index) => (
-                  <option key={`category-${index}`} value={category}>
-                    {category}
+                <>
+                  <option value="All">All</option>
+                  {categories.map((category, index) => (
+                    <option key={`category-${index}`} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </>
+              )}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label className="filter-label">Department Filter</label>
+            <select
+              className="filter-select"
+              value={filters.department}
+              onChange={(e) => handleFilterChange('department', e.target.value)}
+              disabled={departments.length === 0}
+            >
+              <option value="">All Departments</option>
+              {departments.length === 0 ? (
+                <option>Loading departments...</option>
+              ) : (
+                departments.map((department, index) => (
+                  <option key={`department-${index}`} value={department}>
+                    {department}
                   </option>
                 ))
               )}
