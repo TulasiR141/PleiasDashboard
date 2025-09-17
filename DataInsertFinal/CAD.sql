@@ -1,5 +1,3 @@
-begin tran
-
 Drop table CAD
 
 IF NOT EXISTS (
@@ -2113,5 +2111,3 @@ VALUES
 
 
 	select count(*) from CAD
-
-rollback tran

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/GlobalFundingAnalysis.css';
 import { API_BASE_URL } from '../config/environment';
 
-let globalDataCache = { projects: null, lastFetch: null };
+let globalDataCache = { projects: null, mipData: null, lastFetch: null };
 
 const GlobalFundingAnalysis = () => {
   const mapRef = useRef(null);
@@ -12,8 +12,8 @@ const GlobalFundingAnalysis = () => {
   const markersRef = useRef([]);
   const navigate = useNavigate();
 
-  const [filters, setFilters] = useState({ year: '2024', fundingType: 'total' });
-  const [apiData, setApiData] = useState({ projects: null, loading: true, error: null });
+  const [filters, setFilters] = useState({ period: '21-27', fundingType: 'engaged' });
+  const [apiData, setApiData] = useState({ projects: null, mipData: null, loading: true, error: null });
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [mapInitialized, setMapInitialized] = useState(false);
 
@@ -272,45 +272,43 @@ const GlobalFundingAnalysis = () => {
     const now = Date.now();
     const CACHE_DURATION = 5 * 60 * 1000;
     
-    if (globalDataCache.projects && globalDataCache.lastFetch && (now - globalDataCache.lastFetch) < CACHE_DURATION) {
-      setApiData({ projects: globalDataCache.projects, loading: false, error: null });
+    if (globalDataCache.projects && globalDataCache.mipData && globalDataCache.lastFetch && (now - globalDataCache.lastFetch) < CACHE_DURATION) {
+      setApiData({ projects: globalDataCache.projects, mipData: globalDataCache.mipData, loading: false, error: null });
       return;
     }
 
     try {
       setApiData(prev => ({ ...prev, loading: true, error: null }));
-      const response = await fetch(`${API_BASE_URL}/api/projects`);
-      if (!response.ok) throw new Error(`API not available: ${response.status}`);
-      const projects = await response.json();
-      if (!Array.isArray(projects)) throw new Error('API response is not an array');
-      
-      globalDataCache = { projects, lastFetch: now };
-      setApiData({ projects, loading: false, error: null });
+
+      const [projectsResponse, mipResponse] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/projects`),
+        fetch(`${API_BASE_URL}/api/mipdata`)
+      ]);
+
+      if (!projectsResponse.ok) throw new Error(`Projects API not available: ${projectsResponse.status}`);
+      if (!mipResponse.ok) throw new Error(`MIP Data API not available: ${mipResponse.status}`);
+
+      const projects = await projectsResponse.json();
+      const mipData = await mipResponse.json();
+
+      if (!Array.isArray(projects)) throw new Error('Projects API response is not an array');
+      if (!Array.isArray(mipData)) throw new Error('MIP Data API response is not an array');
+
+      globalDataCache = { projects, mipData, lastFetch: now };
+      setApiData({ projects, mipData, loading: false, error: null });
     } catch (error) {
       console.error('Error fetching API data:', error);
-      setApiData({ projects: [], loading: false, error: error.message });
+      setApiData({ projects: [], mipData: [], loading: false, error: error.message });
     }
   }, []);
 
-  const availableYears = useMemo(() => {
-    if (!apiData.projects || !Array.isArray(apiData.projects) || apiData.projects.length === 0) {
-      return ['2024', '2023', '2022', '2021'];
-    }
-    const years = new Set();
-    apiData.projects.forEach(project => {
-      try {
-        if (project.startDate) {
-          const year = new Date(project.startDate).getFullYear();
-          if (!isNaN(year) && year > 1900 && year < 2100) years.add(year.toString());
-        }
-        if (project.year) {
-          const yearStr = typeof project.year === 'string' ? project.year : project.year.toString();
-          if (yearStr.match(/^\d{4}$/)) years.add(yearStr);
-        }
-      } catch (e) {}
-    });
-    return years.size > 0 ? Array.from(years).sort().reverse() : ['2024', '2023', '2022', '2021'];
-  }, [apiData.projects]);
+  const availablePeriods = useMemo(() => {
+    return [
+      { value: '21-27', label: '2021-2027' },
+      { value: '21-24', label: '2021-2024' },
+      { value: '25-27', label: '2025-2027' }
+    ];
+  }, []);
 
   // Function to get coordinates for a country, with fallback to geocoding API
   const getCountryCoordinates = useCallback(async (countryName) => {
@@ -359,68 +357,128 @@ const GlobalFundingAnalysis = () => {
   }, []);
 
   const mapData = useMemo(() => {
-    if (!apiData.projects || !Array.isArray(apiData.projects)) return {};
     const countryData = {};
-    
-    // First pass: collect all unique country names to batch geocode if needed
-    const uniqueCountries = new Set();
-    apiData.projects.forEach(project => {
-      if (project.country && typeof project.country === 'string') {
-        uniqueCountries.add(project.country);
-      }
-    });
-    
-    // Log countries that don't have coordinates
-    const missingCoordinates = Array.from(uniqueCountries).filter(country => 
-      !countryCoordinates[country]
-    );
-    
-    if (missingCoordinates.length > 0) {
-      console.log('Countries missing coordinates:', missingCoordinates);
-    }
-    
-    apiData.projects.forEach(project => {
-      try {
-        let projectYear = null;
-        if (project.year) {
-          projectYear = typeof project.year === 'string' ? project.year : project.year.toString();
-        } else if (project.startDate) {
-          const year = new Date(project.startDate).getFullYear();
-          if (!isNaN(year)) projectYear = year.toString();
-        }
-        if (filters.year !== 'All Years' && projectYear !== filters.year) return;
-        
-        const country = project.country;
-        if (!country || typeof country !== 'string') return;
 
-        let fundingAmount = 0;
-        if (filters.fundingType === 'total') {
-          fundingAmount = project.columN_1_3_1_TOTAL_AMOUNT || project.totalFunding || project.totalAmount || project.amount || 0;
-        } else {
-          const indirectAmount = project.globaL_INDIRECT_MANAGEMENT_AMOUNT || 0;
-          fundingAmount = typeof indirectAmount === 'string' ? parseFloat(indirectAmount) : indirectAmount;
-          if (isNaN(fundingAmount)) {
-            fundingAmount = project.remainingFunding || project.remainingAmount || 0;
+    // Helper function to get MIP amount based on period
+    const getMIPAmountForPeriod = (mipItem, period) => {
+      let total = 0;
+
+      if (period === '21-24' || period === '21-27') {
+        total += (mipItem.supporT_MEASURES_AMOUNT_21_24 || 0);
+        total += (mipItem.p1_AMOUNT_21_24 || 0);
+        total += (mipItem.p2_AMOUNT_21_24 || 0);
+        total += (mipItem.p3_AMOUNT_21_24 || 0);
+      }
+
+      if (period === '25-27' || period === '21-27') {
+        total += (mipItem.supporT_MEASURES_AMOUNT_25_27 || 0);
+        total += (mipItem.p1_AMOUNT_25_27 || 0);
+        total += (mipItem.p2_AMOUNT_25_27 || 0);
+        total += (mipItem.p3_AMOUNT_25_27 || 0);
+      }
+
+      return total;
+    };
+
+    // Helper function to check if project year matches period
+    const isProjectInPeriod = (project, period) => {
+      let projectYear = null;
+      if (project.year) {
+        projectYear = parseInt(typeof project.year === 'string' ? project.year : project.year.toString());
+      } else if (project.startDate) {
+        const year = new Date(project.startDate).getFullYear();
+        if (!isNaN(year)) projectYear = year;
+      }
+
+      if (!projectYear) return false;
+
+      switch (period) {
+        case '21-24': return projectYear >= 2021 && projectYear <= 2024;
+        case '25-27': return projectYear >= 2025 && projectYear <= 2027;
+        case '21-27': return projectYear >= 2021 && projectYear <= 2027;
+        default: return false;
+      }
+    };
+
+    if (filters.fundingType === 'engaged') {
+      // Process projects data for engaged funding
+      if (apiData.projects && Array.isArray(apiData.projects)) {
+        // Collect unique countries
+        const uniqueCountries = new Set();
+        apiData.projects.forEach(project => {
+          if (project.country && typeof project.country === 'string') {
+            uniqueCountries.add(project.country);
           }
+        });
+
+        // Log countries that don't have coordinates
+        const missingCoordinates = Array.from(uniqueCountries).filter(country =>
+          !countryCoordinates[country]
+        );
+
+        if (missingCoordinates.length > 0) {
+          console.log('Countries missing coordinates:', missingCoordinates);
         }
 
-        const numericAmount = parseFloat(fundingAmount) || 0;
-        if (countryData[country]) {
-          countryData[country].funding += numericAmount;
-          countryData[country].projectCount += 1;
-        } else {
-          countryData[country] = {
-            funding: numericAmount, 
-            projectCount: 1, 
-            coordinates: countryCoordinates[country] || null
-          };
-        }
-      } catch (error) {
-        console.warn('Error processing project:', error);
+        apiData.projects.forEach(project => {
+          try {
+            if (!isProjectInPeriod(project, filters.period)) return;
+
+            const country = project.country;
+            if (!country || typeof country !== 'string') return;
+
+            const fundingAmount = project.columN_1_3_1_TOTAL_AMOUNT || project.totalFunding || project.totalAmount || project.amount || 0;
+            const numericAmount = parseFloat(fundingAmount) || 0;
+
+            if (countryData[country]) {
+              countryData[country].funding += numericAmount;
+              countryData[country].projectCount += 1;
+            } else {
+              countryData[country] = {
+                funding: numericAmount,
+                projectCount: 1,
+                coordinates: countryCoordinates[country] || null
+              };
+            }
+          } catch (error) {
+            console.warn('Error processing project:', error);
+          }
+        });
       }
-    });
+    } else if (filters.fundingType === 'projected') {
+      // Process MIP data for projected funding
+      if (apiData.mipData && Array.isArray(apiData.mipData)) {
+        console.log('Processing MIP data:', apiData.mipData.length, 'items');
+        apiData.mipData.forEach(mipItem => {
+          try {
+            const country = mipItem.country;
+            if (!country || typeof country !== 'string') return;
+
+            const fundingAmount = getMIPAmountForPeriod(mipItem, filters.period);
+            console.log(`${country}: ${fundingAmount} for period ${filters.period}`);
+
+            if (countryData[country]) {
+              countryData[country].funding += fundingAmount;
+              countryData[country].projectCount += 1;
+            } else {
+              countryData[country] = {
+                funding: fundingAmount,
+                projectCount: 1,
+                coordinates: countryCoordinates[country] || null
+              };
+            }
+          } catch (error) {
+            console.warn('Error processing MIP data:', error);
+          }
+        });
+        console.log('Final countryData:', countryData);
+      } else {
+        console.log('No MIP data available:', apiData.mipData);
+      }
+    }
+
     return countryData;
-  }, [apiData.projects, filters]);
+  }, [apiData.projects, apiData.mipData, filters]);
 
   const formatCurrency = (amount) => {
     if (!amount || isNaN(amount)) return '€0';
@@ -534,7 +592,7 @@ const GlobalFundingAnalysis = () => {
         const popupContent = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; min-width: 200px;">
             <h3 style="margin: 0 0 8px 0; color: #1976D2; font-size: 16px;">${countryName}</h3>
             <p style="margin: 4px 0; font-size: 14px;"><strong>Projects:</strong> ${countryData.projectCount}</p>
-            <p style="margin: 4px 0; font-size: 14px;"><strong>${filters.fundingType === 'total' ? 'Total' : 'Indirect Management'} Funding:</strong> ${formatCurrency(countryData.funding)}</p>
+            <p style="margin: 4px 0; font-size: 14px;"><strong>${filters.fundingType === 'engaged' ? 'Engaged' : 'Projected'} Funding:</strong> ${formatCurrency(countryData.funding)}</p>
           </div>`;
 
         marker.bindPopup(popupContent);
@@ -683,19 +741,18 @@ const GlobalFundingAnalysis = () => {
 
         <div className="filters-container">
           <div className="filter-group">
-            <label className="filter-label">Year Filter</label>
-            <select className="filter-select" value={filters.year} onChange={(e) => handleFilterChange('year', e.target.value)}>
-              <option value="All Years">All Years</option>
-              {availableYears.map(year => (
-                <option key={year} value={year}>{year}</option>
+            <label className="filter-label">Period Filter</label>
+            <select className="filter-select" value={filters.period} onChange={(e) => handleFilterChange('period', e.target.value)}>
+              {availablePeriods.map(period => (
+                <option key={period.value} value={period.value}>{period.label}</option>
               ))}
             </select>
           </div>
           <div className="filter-group">
             <label className="filter-label">Funding Type</label>
             <select className="filter-select" value={filters.fundingType} onChange={(e) => handleFilterChange('fundingType', e.target.value)}>
-              <option value="total">Total Amount of Funding</option>
-              <option value="remaining">Indirect Management Amount</option>
+              <option value="engaged">Engaged Budget (Action Plans)</option>
+              <option value="projected">Projected Budget (MIPs)</option>
             </select>
           </div>
         </div>
@@ -706,7 +763,7 @@ const GlobalFundingAnalysis = () => {
             <div className="chart-title-section">
               <h2 className="chart-title">Global Funding Map</h2>
               <p className="chart-subtitle">
-                {filters.fundingType === 'total' ? 'Total' : 'Indirect management'} funding by country for {filters.year === 'All Years' ? 'all years' : filters.year}
+                {filters.fundingType === 'engaged' ? 'Engaged' : 'Projected'} funding by country for period {availablePeriods.find(p => p.value === filters.period)?.label || filters.period}
               </p>
             </div>
           </div>
@@ -758,7 +815,7 @@ const GlobalFundingAnalysis = () => {
                   <div className="country-tooltip">
                     <h3>{selectedCountry}</h3>
                     <p><strong>Projects:</strong> {mapData[selectedCountry].projectCount}</p>
-                    <p><strong>{filters.fundingType === 'total' ? 'Total' : 'Indirect Management'} Funding:</strong> {formatCurrency(mapData[selectedCountry].funding)}</p>
+                    <p><strong>{filters.fundingType === 'engaged' ? 'Engaged' : 'Projected'} Funding:</strong> {formatCurrency(mapData[selectedCountry].funding)}</p>
                   </div>
                 )}
 

@@ -1,5 +1,3 @@
-begin tran
-
 DROP TABLE PROJECTS
 
 IF NOT EXISTS (
@@ -1365,4 +1363,3 @@ INSERT INTO [PROJECTS] (
 
 
 select count(*) from PROJECTS
-rollback tran

@@ -14,6 +14,13 @@ import {
 import '../styles/FundingManagementAnalysis.css';
 
 import { API_BASE_URL } from '../config/environment';
+
+// List of agencies to ignore (case-insensitive). Keep empty by default.
+const AGENCIES_TO_IGNORE = [
+    "International Organization", "Entrusted Entity", "Pillar Assessed Entity", "European Financial Institution", "Lead Finance Institution", "Member State Agency", "Member State Organisation(S)", "Member States Organisation",
+    "International Organization", "Un", "Lead Finance Institution (Via The Aip)", "Lead Finance Institutions (Via The Aip)", "Member State Organisation", "Member State Agency", "Pillar", "Eu Member State Organisation",
+    "Entity Whose Pillars Have Been Evaluated", "Third Donor Country Agency", "Lead Finance Institutions Identified In The Appendix To This Action Document", "Eu Ms Organisation", "Trusted Entity", "Member State Organisation Or An International Organization", "Ms Organization Or International Organization", "Partner Country"
+  ];
 const FundingManagementAnalysis = () => {
   const navigate = useNavigate();
   
@@ -402,7 +409,15 @@ const FundingManagementAnalysis = () => {
                   </div>
                   <div className="agencies-content">
                     {chartData.topAgencies && chartData.topAgencies.length > 0 ? (
-                      chartData.topAgencies.map((item, index) => {
+                      chartData.topAgencies
+                        .filter(item => {
+                          if (!item || typeof item !== 'object') return false;
+                          const agencyName = typeof item.agency === 'string' ? item.agency : '';
+                          return !AGENCIES_TO_IGNORE.some(ignore =>
+                            String(ignore).trim().toLowerCase() === agencyName.trim().toLowerCase()
+                          );
+                        })
+                        .map((item, index) => {
                         if (!item || typeof item !== 'object') return null;
                         
                         const agency = typeof item.agency === 'string' ? item.agency : `Agency ${index + 1}`;
@@ -416,7 +431,7 @@ const FundingManagementAnalysis = () => {
                             <div className="agency-count">{projectCount}</div>
                           </div>
                         );
-                      }).filter(Boolean)
+                        }).filter(Boolean)
                     ) : (
                       <div className="agency-row">
                         <div className="agency-name" style={{textAlign: 'center', color: '#6b7280', gridColumn: '1 / -1'}}>

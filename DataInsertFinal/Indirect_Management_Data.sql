@@ -1,5 +1,3 @@
-begin tran
-
 Drop table Indirect_Management_Data
 
 IF NOT EXISTS (
@@ -374,4 +372,3 @@ INSERT INTO [Indirect_Management_Data](
 
 	select count(*) from Indirect_Management_Data
 
-rollback tran

@@ -1,4 +1,3 @@
-begin tran
 
 Drop table MIP_DATA
 
@@ -137,5 +136,3 @@ VALUES (N'Angola',27500000,10,0,0,N'Sustainable economic diversification',137500
 
 
 	select count(*) from MIP_DATA
-
-rollback tran
