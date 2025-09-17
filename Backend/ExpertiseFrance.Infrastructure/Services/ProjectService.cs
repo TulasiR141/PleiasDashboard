@@ -59,6 +59,15 @@ namespace ExpertiseFrance.Infrastructure.Services
         {
             return await _projectRepository.GetSection3ChartsDataAsync(yearRange,category);
         }
-        
+
+        public async Task<IEnumerable<TopCADData>> GetGlobalTopCADAsync()
+        {
+            return await _projectRepository.GetGlobalTopCADAsync();
+        }
+
+        public async Task<IEnumerable<TopDepartmentData>> GetGlobalTopDepartmentsAsync()
+        {
+            return await _projectRepository.GetGlobalTopDepartmentsAsync();
+        }
     }
 }

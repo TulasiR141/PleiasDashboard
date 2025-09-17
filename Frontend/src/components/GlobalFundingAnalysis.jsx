@@ -3,6 +3,7 @@ import { Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/GlobalFundingAnalysis.css';
 import { API_BASE_URL } from '../config/environment';
+import TopDataTables from './TopDataTables';
 
 let globalDataCache = { projects: null, mipData: null, lastFetch: null };
 
@@ -448,14 +449,12 @@ const GlobalFundingAnalysis = () => {
     } else if (filters.fundingType === 'projected') {
       // Process MIP data for projected funding
       if (apiData.mipData && Array.isArray(apiData.mipData)) {
-        console.log('Processing MIP data:', apiData.mipData.length, 'items');
         apiData.mipData.forEach(mipItem => {
           try {
             const country = mipItem.country;
             if (!country || typeof country !== 'string') return;
 
             const fundingAmount = getMIPAmountForPeriod(mipItem, filters.period);
-            console.log(`${country}: ${fundingAmount} for period ${filters.period}`);
 
             if (countryData[country]) {
               countryData[country].funding += fundingAmount;
@@ -471,9 +470,6 @@ const GlobalFundingAnalysis = () => {
             console.warn('Error processing MIP data:', error);
           }
         });
-        console.log('Final countryData:', countryData);
-      } else {
-        console.log('No MIP data available:', apiData.mipData);
       }
     }
 
@@ -557,18 +553,13 @@ const GlobalFundingAnalysis = () => {
     const countriesWithCoords = Object.entries(mapData).filter(([_, data]) => data.coordinates);
     if (countriesWithCoords.length === 0) return;
 
-    const fundingAmounts = countriesWithCoords.map(([_, data]) => data.funding).filter(f => f > 0);
-    const maxFunding = fundingAmounts.length > 0 ? Math.max(...fundingAmounts) : 1;
-    const minFunding = fundingAmounts.length > 0 ? Math.min(...fundingAmounts) : 0;
-
     const getMarkerColor = (amount) => {
       if (amount <= 0) return '#9E9E9E';
-      const intensity = maxFunding > minFunding ? (amount - minFunding) / (maxFunding - minFunding) : 0;
-      if (intensity > 0.8) return '#4CAF50';
-      if (intensity > 0.6) return '#8BC34A';
-      if (intensity > 0.4) return '#FFC107';
-      if (intensity > 0.2) return '#FF9800';
-      return '#F44336';
+      if (amount >= 500000000) return '#4CAF50'; // Vert foncé : 500M€+
+      if (amount >= 200000000) return '#8BC34A'; // Vert clair : 200-500M€
+      if (amount >= 50000000) return '#FFC107';  // Jaune : 50-200M€
+      if (amount >= 10000000) return '#FF9800';  // Orange : 10-50M€
+      return '#F44336'; // Rouge : moins de 10M€
     };
 
     countriesWithCoords.forEach(([countryName, countryData]) => {
@@ -577,8 +568,13 @@ const GlobalFundingAnalysis = () => {
       
       const baseSize = 8; const maxSize = 25;
       let size = baseSize;
-      if (countryData.funding > 0 && maxFunding > 0) {
-        size = Math.max(baseSize, Math.min(maxSize, baseSize + (countryData.funding / maxFunding) * (maxSize - baseSize)));
+      if (countryData.funding > 0) {
+        // Taille basée sur les seuils fixes
+        if (countryData.funding >= 500000000) size = maxSize; // 500M€+
+        else if (countryData.funding >= 200000000) size = maxSize * 0.8; // 200-500M€
+        else if (countryData.funding >= 50000000) size = maxSize * 0.6; // 50-200M€
+        else if (countryData.funding >= 10000000) size = maxSize * 0.4; // 10-50M€
+        else size = maxSize * 0.2; // moins de 10M€
       } else {
         size = Math.max(baseSize, Math.min(maxSize, baseSize + (countryData.projectCount / 10) * (maxSize - baseSize)));
       }
@@ -781,19 +777,19 @@ const GlobalFundingAnalysis = () => {
               <>
                 <div className="map-legend">
                   {[
-                    { color: '#4CAF50', size: 24, label: 'Highest Funding' },
-                    { color: '#8BC34A', size: 20, label: 'High Funding' },
-                    { color: '#FFC107', size: 16, label: 'Medium Funding' },
-                    { color: '#FF9800', size: 14, label: 'Low-Medium Funding' },
-                    { color: '#F44336', size: 12, label: 'Low Funding' },
-                    { color: '#9E9E9E', size: 10, label: 'No Funding Data' }
+                    { color: '#4CAF50', size: 25, label: 'Plus de 500M€' },
+                    { color: '#8BC34A', size: 20, label: '200M€ - 500M€' },
+                    { color: '#FFC107', size: 15, label: '50M€ - 200M€' },
+                    { color: '#FF9800', size: 12, label: '10M€ - 50M€' },
+                    { color: '#F44336', size: 8, label: 'Moins de 10M€' },
+                    { color: '#9E9E9E', size: 8, label: 'Pas de données' }
                   ].map((item, index) => (
                     <div key={index} className="legend-item">
-                      <div 
-                        className="legend-circle" 
+                      <div
+                        className="legend-circle"
                         style={{
-                          width: `${item.size}px`, 
-                          height: `${item.size}px`, 
+                          width: `${item.size}px`,
+                          height: `${item.size}px`,
                           backgroundColor: item.color
                         }}
                       ></div>
@@ -846,6 +842,10 @@ const GlobalFundingAnalysis = () => {
             )}
           </div>
         </div>
+
+        {/* Top Data Tables Section */}
+        <TopDataTables />
+
       </main>
     </div>
   );

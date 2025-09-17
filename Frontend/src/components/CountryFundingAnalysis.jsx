@@ -6,6 +6,13 @@ import '../styles/CountryFundingAnalysis.css';
 
 import { API_BASE_URL } from '../config/environment';
 
+// Optional mapping for Priority codes to titles. Fill with real names.
+const PRIORITY_TITLES = {
+  // P1: 'Priority 1 title',
+  // P2: 'Priority 2 title',
+  // P3: 'Priority 3 title',
+};
+
 const CountryFundingAnalysis = () => {
   const navigate = useNavigate();
 
@@ -60,6 +67,7 @@ const CountryFundingAnalysis = () => {
         }
         
         const data = await response.json();
+        console.log("data", data);
         setApiData(data);
 
         // Extract unique countries from projected data for filter
@@ -260,17 +268,25 @@ const CountryFundingAnalysis = () => {
             </svg>
           </div>
           <div className="country-funding-pie-chart-legend">
-            {data.map((item, index) => (
-              <div key={index} className="country-funding-legend-item">
-                <div 
-                  className="country-funding-legend-color" 
-                  style={{ backgroundColor: colors[index % colors.length] }}
-                ></div>
-                <span className="country-funding-legend-text">
-                  {item.area || `Area ${index + 1}`}
-                </span>
-              </div>
-            ))}
+            {data.map((item, index) => {
+              const areaRaw = item.area || item.code || `P${index + 1}`;
+              const code = String(areaRaw).trim().toUpperCase();
+              const base = /^P[1-3]$/.test(code) ? code : String(areaRaw).trim();
+              const titleFromItem = typeof item.title === 'string' ? item.title.trim() : '';
+              const mappedTitle = PRIORITY_TITLES[code];
+              const label = titleFromItem
+                ? `${base}: ${titleFromItem}`
+                : (mappedTitle && mappedTitle.trim() ? `${base}: ${mappedTitle}` : base);
+              return (
+                <div key={index} className="country-funding-legend-item">
+                  <div 
+                    className="country-funding-legend-color" 
+                    style={{ backgroundColor: colors[index % colors.length] }}
+                  ></div>
+                  <span className="country-funding-legend-text">{label}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -373,7 +373,7 @@ html, body {
   align-items: center;
   gap: 1rem;
   flex: 1;
-  max-width: 350px;
+  max-width: 45%;
   min-width: 300px;
 }
 

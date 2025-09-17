@@ -16,5 +16,7 @@ namespace ExpertiseFrance.Core.Interfaces.Services
          Task<CountryChartDataResponse> GetSection2ChartsDataAsync();
         Task<Section3ChartsDataResponse> GetSection3ChartsDataAsync(string yearRange = null, string category = null);
         Task<IEnumerable<TopCountryData>> GetAllCadCategory();
+        Task<IEnumerable<TopCADData>> GetGlobalTopCADAsync();
+        Task<IEnumerable<TopDepartmentData>> GetGlobalTopDepartmentsAsync();
     }
 }

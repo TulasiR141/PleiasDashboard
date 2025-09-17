@@ -137,5 +137,33 @@ namespace ExpertiseFrance.API.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
        }
+
+        [HttpGet("global-top-cad")]
+        public async Task<IActionResult> GetGlobalTopCAD()
+        {
+            try
+            {
+                var topCADData = await _projectService.GetGlobalTopCADAsync();
+                return Ok(topCADData);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpGet("global-top-departments")]
+        public async Task<IActionResult> GetGlobalTopDepartments()
+        {
+            try
+            {
+                var topDepartmentData = await _projectService.GetGlobalTopDepartmentsAsync();
+                return Ok(topDepartmentData);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
     }
 }

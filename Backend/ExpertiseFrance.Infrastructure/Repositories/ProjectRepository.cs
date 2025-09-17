@@ -76,6 +76,68 @@ namespace ExpertiseFrance.Infrastructure.Repositories
             // Execute both queries
             var engageData = await connection.QueryAsync<ChartDataItem>(engageQuery);
             var projectedData = await connection.QueryAsync<ChartDataItem>(projectedQuery);
+
+            // Enrich projected data with priority titles from MIP_DATA
+            // Build a lookup for titles per country
+            var titleRows = await connection.QueryAsync(
+                @"SELECT COUNTRY,
+                         P1_TITLE AS P1_TITLE,
+                         P2_TITLE AS P2_TITLE,
+                         P3_TITLE AS P3_TITLE
+                  FROM MIP_DATA");
+
+            var titlesByCountry = new Dictionary<string, (string? P1, string? P2, string? P3)>(StringComparer.OrdinalIgnoreCase);
+            foreach (var row in titleRows)
+            {
+                string country = row.COUNTRY ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(country)) continue;
+                // Last write wins; titles typically consistent per country
+                titlesByCountry[country] = (
+                    (string?)row.P1_TITLE,
+                    (string?)row.P2_TITLE,
+                    (string?)row.P3_TITLE
+                );
+            }
+
+            void SetTitleFromArea(ChartDataItem item, (string? P1, string? P2, string? P3) titles)
+            {
+                switch (item.Area?.Trim().ToUpperInvariant())
+                {
+                    case "P1":
+                        item.Title = titles.P1;
+                        break;
+                    case "P2":
+                        item.Title = titles.P2;
+                        break;
+                    case "P3":
+                        item.Title = titles.P3;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            foreach (var item in projectedData)
+            {
+                if (item == null || string.IsNullOrWhiteSpace(item.Country) || string.IsNullOrWhiteSpace(item.Area))
+                    continue;
+
+                if (titlesByCountry.TryGetValue(item.Country, out var titles))
+                {
+                    SetTitleFromArea(item, titles);
+                }
+            }
+
+            foreach (var item in engageData)
+            {
+                if (item == null || string.IsNullOrWhiteSpace(item.Country) || string.IsNullOrWhiteSpace(item.Area))
+                    continue;
+
+                if (titlesByCountry.TryGetValue(item.Country, out var titles))
+                {
+                    SetTitleFromArea(item, titles);
+                }
+            }
             var cadData = await connection.QueryAsync<ProjectCadData>(cadQuery);
             var actionData = await connection.QueryAsync<ActionData>(actionQuery);
 
@@ -136,5 +198,41 @@ namespace ExpertiseFrance.Infrastructure.Repositories
         throw new Exception($"Error executing chart data queries: {ex.Message}", ex);
     }
 }
+
+        public async Task<IEnumerable<TopCADData>> GetGlobalTopCADAsync()
+        {
+            using var connection = new SqlConnection(_connectionString);
+            var query = @"
+                SELECT
+                    c.CODE_CAD as CADCode,
+                    c.NAME as Name,
+                    COUNT(DISTINCT c.FILENAME) as ActionPlanCount
+                FROM CAD c
+                WHERE c.CODE_CAD IS NOT NULL
+                    AND c.NAME IS NOT NULL
+                    AND c.FILENAME IS NOT NULL
+                GROUP BY c.CODE_CAD, c.NAME
+                ORDER BY ActionPlanCount DESC";
+
+            return await connection.QueryAsync<TopCADData>(query);
+        }
+
+        public async Task<IEnumerable<TopDepartmentData>> GetGlobalTopDepartmentsAsync()
+        {
+            using var connection = new SqlConnection(_connectionString);
+            var query = @"
+                SELECT
+                    d.DEPARTMENT_ID as DepartmentId,
+                    d.DEPARTMENT_NAME as DepartmentName,
+                    COUNT(DISTINCT d.FILENAME) as ActionPlanCount
+                FROM DEPARTMENTS d
+                WHERE d.DEPARTMENT_ID IS NOT NULL
+                    AND d.DEPARTMENT_NAME IS NOT NULL
+                    AND d.FILENAME IS NOT NULL
+                GROUP BY d.DEPARTMENT_ID, d.DEPARTMENT_NAME
+                ORDER BY ActionPlanCount DESC";
+
+            return await connection.QueryAsync<TopDepartmentData>(query);
+        }
         }
 }

@@ -57,6 +57,7 @@ namespace ExpertiseFrance.Core.Models
         public string Country { get; set; }
         public string YearRange { get; set; }
         public string Area { get; set; }
+        public string? Title { get; set; }
         public decimal Amount { get; set; }
         public decimal Percentage { get; set; }
     }
@@ -116,6 +117,21 @@ public class Section3ChartsDataResponse
     public List<TopCountryData> TopCountries { get; set; } = new List<TopCountryData>();
     public List<TopProgramData> TopPrograms { get; set; } = new List<TopProgramData>();
     public List<TopAgencyData> TopAgencies { get; set; } = new List<TopAgencyData>();
+}
+
+// Response models for global top data tables
+public class TopCADData
+{
+    public string CADCode { get; set; }
+    public string Name { get; set; }
+    public int ActionPlanCount { get; set; }
+}
+
+public class TopDepartmentData
+{
+    public string DepartmentId { get; set; }
+    public string DepartmentName { get; set; }
+    public int ActionPlanCount { get; set; }
 }
 
 }

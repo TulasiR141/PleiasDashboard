@@ -12,9 +12,11 @@ namespace ExpertiseFrance.Core.Interfaces.Repositories
         Task<Project?> GetProjectByGuidAsync(Guid guid);
         Task<IEnumerable<Project>> GetProjectsByCountryAsync(string country);
         Task<IEnumerable<Project>> GetProjectsByYearAsync(int year);
-        // Add this to your IChartRepository interface  
+        // Add this to your IChartRepository interface
         Task<CountryChartDataResponse> GetSection2ChartsDataAsync();
         Task<Section3ChartsDataResponse> GetSection3ChartsDataAsync(string yearRange = null, string category = null);
         Task<IEnumerable<TopCountryData>> GetAllCadCategory();
+        Task<IEnumerable<TopCADData>> GetGlobalTopCADAsync();
+        Task<IEnumerable<TopDepartmentData>> GetGlobalTopDepartmentsAsync();
     }
 }
