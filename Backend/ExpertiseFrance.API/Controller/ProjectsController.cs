@@ -111,12 +111,43 @@ namespace ExpertiseFrance.API.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-        [HttpGet("section2charts")]
-        public async Task<IActionResult> GetSection2ChartsData()
+
+        [HttpGet("countries")]
+        public async Task<IActionResult> GetCountries()
         {
             try
             {
-                var chartData = await _projectService.GetSection2ChartsDataAsync();
+                var countries = await _projectService.GetDistinctCountriesAsync();
+                return Ok(countries);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpGet("departments")]
+        public async Task<IActionResult> GetDepartments()
+        {
+            try
+            {
+                var departments = await _projectService.GetDistinctDepartmentsAsync();
+                return Ok(departments);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        // legacy section2 endpoints removed; using normalized per-country endpoint
+
+        [HttpGet("section2charts-normalized/country/{country}")]
+        public async Task<IActionResult> GetNormalizedSection2ChartsByCountry(string country)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(country)) return BadRequest("Country is required");
+                var chartData = await _projectService.GetNormalizedSection2ChartsByCountryAsync(country);
                 return Ok(chartData);
             }
             catch (Exception ex)
@@ -125,11 +156,11 @@ namespace ExpertiseFrance.API.Controllers
             }
         }
         [HttpGet("section3charts")]
-        public async Task<IActionResult> GetSection3ChartsDataAsync(string yearRange = null, string category = null)
+        public async Task<IActionResult> GetSection3ChartsDataAsync(string yearRange = null, string category = null, string department = null)
         {
         try
             {
-                var chartData = await _projectService.GetSection3ChartsDataAsync(yearRange,category);
+                var chartData = await _projectService.GetSection3ChartsDataAsync(yearRange, category, department);
                 return Ok(chartData);
             }
             catch (Exception ex)

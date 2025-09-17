@@ -134,4 +134,32 @@ public class TopDepartmentData
     public int ActionPlanCount { get; set; }
 }
 
+    // Normalized DTOs for Section 2 (per-country)
+    public class NormalizedPriorityBreakdown
+    {
+        public string? Title { get; set; }
+        public decimal Amount_21_24 { get; set; }
+        public decimal Percentage_21_24 { get; set; }
+        public decimal Amount_25_27 { get; set; }
+        public decimal Percentage_25_27 { get; set; }
+    }
+
+    public class NormalizedPrioritySet
+    {
+        public NormalizedPriorityBreakdown P1 { get; set; } = new NormalizedPriorityBreakdown();
+        public NormalizedPriorityBreakdown P2 { get; set; } = new NormalizedPriorityBreakdown();
+        public NormalizedPriorityBreakdown P3 { get; set; } = new NormalizedPriorityBreakdown();
+        public NormalizedPriorityBreakdown SupportMeasure { get; set; } = new NormalizedPriorityBreakdown();
+        public NormalizedPriorityBreakdown Unknown { get; set; } = new NormalizedPriorityBreakdown();
+    }
+
+    public class NormalizedCountrySection2Response
+    {
+        public string Country { get; set; }
+        public NormalizedPrioritySet Projected { get; set; } = new NormalizedPrioritySet();
+        public NormalizedPrioritySet Engage { get; set; } = new NormalizedPrioritySet();
+        public List<ProjectCadData> CadDataChart2 { get; set; } = new List<ProjectCadData>();
+        public List<ActionData> ActionDataChart3 { get; set; } = new List<ActionData>();
+    }
+
 }

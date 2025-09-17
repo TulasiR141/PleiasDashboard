@@ -51,13 +51,9 @@ namespace ExpertiseFrance.Infrastructure.Services
 
             return await _projectRepository.GetProjectsByYearAsync(year);
         }
-        public async Task<CountryChartDataResponse> GetSection2ChartsDataAsync()
+        public async Task<Section3ChartsDataResponse> GetSection3ChartsDataAsync(string yearRange = null, string category = null, string department = null)
         {
-            return await _projectRepository.GetSection2ChartsDataAsync();
-        }
-        public async Task<Section3ChartsDataResponse> GetSection3ChartsDataAsync(string yearRange = null, string category = null)
-        {
-            return await _projectRepository.GetSection3ChartsDataAsync(yearRange,category);
+            return await _projectRepository.GetSection3ChartsDataAsync(yearRange, category, department);
         }
 
         public async Task<IEnumerable<TopCADData>> GetGlobalTopCADAsync()
@@ -68,6 +64,23 @@ namespace ExpertiseFrance.Infrastructure.Services
         public async Task<IEnumerable<TopDepartmentData>> GetGlobalTopDepartmentsAsync()
         {
             return await _projectRepository.GetGlobalTopDepartmentsAsync();
+        }
+
+        public async Task<IEnumerable<string>> GetDistinctCountriesAsync()
+        {
+            return await _projectRepository.GetDistinctCountriesAsync();
+        }
+
+        public async Task<IEnumerable<string>> GetDistinctDepartmentsAsync()
+        {
+            return await _projectRepository.GetDistinctDepartmentsAsync();
+        }
+
+        public async Task<NormalizedCountrySection2Response> GetNormalizedSection2ChartsByCountryAsync(string country)
+        {
+            if (string.IsNullOrWhiteSpace(country))
+                throw new ArgumentException("Country cannot be null or empty", nameof(country));
+            return await _projectRepository.GetNormalizedSection2ChartsByCountryAsync(country);
         }
     }
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, BarChart3, PieChart, List, Download } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart3, PieChart, List, Download } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import '../styles/CountryFundingAnalysis.css';
 
 import { API_BASE_URL } from '../config/environment';
@@ -10,12 +10,7 @@ import { API_BASE_URL } from '../config/environment';
 const PIE_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b'];
 const UNKNOWN_COLOR = '#9CA3AF'; // Gray for unknown remainder
 
-// Optional mapping for Priority codes to titles. Fill with real names.
-const PRIORITY_TITLES = {
-  // P1: 'Priority 1 title',
-  // P2: 'Priority 2 title',
-  // P3: 'Priority 3 title',
-};
+// Titles now come from API (normalized endpoint)
 
 const CountryFundingAnalysis = () => {
   const navigate = useNavigate();
@@ -26,7 +21,7 @@ const CountryFundingAnalysis = () => {
   });
 
   const [availableCountries, setAvailableCountries] = useState([]);
-  const [apiData, setApiData] = useState(null);
+  const [normalizedData, setNormalizedData] = useState(null);
   const [filteredData, setFilteredData] = useState({
     engage: [],
     projected: [],
@@ -59,71 +54,124 @@ const CountryFundingAnalysis = () => {
     }
   };
 
-  // Fetch data from API on component mount
+  // Fetch countries list on mount, then fetch data for the first country
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCountriesAndData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/api/Projects/section2charts`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        const countriesRes = await fetch(`${API_BASE_URL}/api/Projects/countries`);
+        if (!countriesRes.ok) {
+          throw new Error(`Countries HTTP error! status: ${countriesRes.status}`);
         }
-        
-        const data = await response.json();
-        console.log("data", data);
-        setApiData(data);
-
-        // Extract unique countries from projected data for filter
-        const countries = [...new Set(data.projected.map(item => item.country))].sort();
-        setAvailableCountries(countries);
-        
-        // Set default country to first available
-        if (countries.length > 0) {
-          setFilters(prev => ({ ...prev, country: countries[0] }));
+        const countries = await countriesRes.json();
+        const sorted = Array.isArray(countries) ? countries.sort() : [];
+        setAvailableCountries(sorted);
+        if (sorted.length > 2) {
+          const first = sorted[1];
+          setFilters(prev => ({ ...prev, country: first }));
+          // Fetch initial section2 data for the first country
+          const normalizedRes = await fetch(`${API_BASE_URL}/api/Projects/section2charts-normalized/country/${encodeURIComponent(first)}`);
+          if (!normalizedRes.ok) throw new Error(`Norm HTTP error! status: ${normalizedRes.status}`);
+          const normalized = await normalizedRes.json();
+          setNormalizedData(normalized);
+        } else {
+          setNormalizedData(null);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching countries/data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCountriesAndData();
+  }, []);
+
+  // When country changes, fetch per-country data; then filter by year range
+  useEffect(() => {
+    const fetchCountryData = async (country) => {
+      try {
+        setLoading(true);
+        const norm = await fetch(`${API_BASE_URL}/api/Projects/section2charts-normalized/country/${encodeURIComponent(country)}`);
+        if (!norm.ok) throw new Error(`Country norm HTTP error! status: ${norm.status}`);
+        const normalized = await norm.json();
+        setNormalizedData(normalized);
+      } catch (err) {
+        console.error('Error fetching per-country data:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, []);
+    if (filters.country) {
+      fetchCountryData(filters.country);
+    }
+  }, [filters.country]);
 
-  // Filter data based on selected filters
+  // Build pie slices from normalized data for the selected yearRange
   useEffect(() => {
-    if (!apiData || !filters.country) return;
+  if (!normalizedData) return;
 
-    const filterByCountryAndYear = (data) => {
-      return data.filter(item => 
-        item.country === filters.country && 
-        item.yearRange === filters.yearRange
-      );
+    const toAreaLabel = (key) => {
+      if (key === 'SupportMeasure') return 'Support Measure';
+      if (key === 'Unknown') return 'Unknown';
+      return key; // P1/P2/P3
     };
 
-    // Special filtering logic for CAD data
-    const filterCADData = (data) => {
-      if (filters.yearRange === '2021-2027') {
-        // Show all data for selected country regardless of year range
-        return data.filter(item => item.country === filters.country);
-      } else {
-        // Filter normally by both country and year range
-        return data.filter(item => 
-          item.country === filters.country && 
-          item.yearRange === filters.yearRange
-        );
+    const buildSlicesFromNormalized = (norm, which, yearRange) => {
+      if (!norm) return [];
+      const pr = which === 'Engage' ? norm.engage : norm.projected;
+      if (!pr) return [];
+      const keys = [
+        { key: 'p1', label: 'P1' },
+        { key: 'p2', label: 'P2' },
+        { key: 'p3', label: 'P3' },
+        { key: 'supportMeasure', label: 'Support Measure' },
+        { key: 'unknown', label: 'Unknown' },
+      ];
+      // Choose buckets
+      const pick = (b, yr) => {
+        if (yr === '2021-2024') return { amount: b?.amount_21_24 || 0, percent: b?.percentage_21_24 || 0 };
+        if (yr === '2025-2027') return { amount: b?.amount_25_27 || 0, percent: b?.percentage_25_27 || 0 };
+        const a = (b?.amount_21_24 || 0) + (b?.amount_25_27 || 0);
+        return { amount: a, percent: 0 }; // recompute below for 21-27
+      };
+      const items = keys.map(({ key, label }) => {
+        const b = pr[key] || {};
+        const { amount, percent } = pick(b, yearRange);
+        const title = (b.title || '').trim();
+        return {
+          area: label,
+          title: title || undefined,
+          amount,
+          percentage: percent
+        };
+      });
+      // For 2021-2027 recompute percentages from amounts
+      if (yearRange === '2021-2027') {
+        const total = items.reduce((s, it) => s + (it.amount || 0), 0);
+        return total > 0 ? items.map(it => ({ ...it, percentage: (it.amount * 100) / total })) : items;
       }
+      return items;
     };
 
+    const filteredByYear = (list) => (list || []).filter(item => item.yearRange === filters.yearRange && (!filters.country || item.country === filters.country));
+    const filterCADData = (list) => {
+      if (filters.yearRange === '2021-2027') return (list || []).filter(item => !filters.country || item.country === filters.country);
+      return (list || []).filter(item => item.yearRange === filters.yearRange && (!filters.country || item.country === filters.country));
+    };
+
+    const engageSlices = buildSlicesFromNormalized(normalizedData, 'Engage', filters.yearRange);
+    const projectedSlices = buildSlicesFromNormalized(normalizedData, 'Projected', filters.yearRange);
+
+  const cad = normalizedData?.cadDataChart2 || [];
+  const actions = normalizedData?.actionDataChart3 || [];
     setFilteredData({
-      engage: filterByCountryAndYear(apiData.engage || []),
-      projected: filterByCountryAndYear(apiData.projected || []),
-      cadData: filterCADData(apiData.cadDataChart2 || []),
-      actionData: filterByCountryAndYear(apiData.actionDataChart3 || [])
+      engage: engageSlices,
+      projected: projectedSlices,
+      cadData: filterCADData(cad),
+      actionData: filteredByYear(actions)
     });
-  }, [apiData, filters]);
+  }, [normalizedData, filters.yearRange, filters.country]);
 
   const handleFilterChange = (filterType, value) => {
     setFilters(prev => ({
@@ -300,14 +348,13 @@ const CountryFundingAnalysis = () => {
     const order = ['P1', 'P2', 'P3', 'Support Measure', 'Unknown'];
     const proj = Array.isArray(filteredData.projected) ? filteredData.projected : [];
     const eng = Array.isArray(filteredData.engage) ? filteredData.engage : [];
-    return order.map((code, idx) => {
+    return order.map((code) => {
       const matchProj = proj.find(d => String(d.area || '').trim().toUpperCase() === code.toUpperCase());
       const matchEng = eng.find(d => String(d.area || '').trim().toUpperCase() === code.toUpperCase());
       const titleFromApi = code === 'Unknown' ? '' : ((matchProj?.title && String(matchProj.title).trim()) || (matchEng?.title && String(matchEng.title).trim()) || '');
-      const mappedTitle = PRIORITY_TITLES[code];
       const label = code === 'Unknown'
         ? 'Unknown'
-        : (titleFromApi ? `${code}: ${titleFromApi}` : (mappedTitle && mappedTitle.trim() ? `${code}: ${mappedTitle}` : code));
+        : (titleFromApi ? `${code}: ${titleFromApi}` : code);
 
       // Include only if present in at least one dataset with some value
       const hasData = (matchProj && ((matchProj.amount ?? 0) > 0 || (matchProj.percentage ?? 0) > 0)) ||
@@ -364,9 +411,9 @@ const CountryFundingAnalysis = () => {
           
           <nav className="country-funding-navigation">
             <button className="country-funding-nav-link" onClick={() => handleNavigation('home')}>Home</button>
-            <button className="country-funding-nav-link" onClick={() => handleNavigation('global')}>Sectors</button>
-            <button className="country-funding-nav-link active" onClick={() => handleNavigation('country')}>Countries</button>
-            <button className="country-funding-nav-link" onClick={() => handleNavigation('funding')}>Funding Flows</button>
+            <button className="country-funding-nav-link" onClick={() => handleNavigation('global')}>Global Funding Landscape</button>
+            <button className="country-funding-nav-link active" onClick={() => handleNavigation('country')}>Country Funding Analysis</button>
+            <button className="country-funding-nav-link" onClick={() => handleNavigation('funding')}>Funding Management Analysis</button>
           </nav>
         </div>
       </header>

@@ -43,9 +43,9 @@ const HomePage = () => {
           
           <nav className="navigation">
             <a href="#" className="nav-link active" onClick={() => handleNavigation('home')}>Home</a>
-            <a href="#" className="nav-link" onClick={() => handleNavigation('global')}>Sectors</a>
-            <a href="#" className="nav-link" onClick={() => handleNavigation('country')}>Countries</a>
-            <a href="#" className="nav-link" onClick={() => handleNavigation('funding')}>Funding Flows</a>
+            <a href="#" className="nav-link" onClick={() => handleNavigation('global')}>Global Funding Landscape</a>
+            <a href="#" className="nav-link" onClick={() => handleNavigation('country')}>Country Funding Analysis</a>
+            <a href="#" className="nav-link" onClick={() => handleNavigation('funding')}>Funding Management Analysis</a>
           </nav>
         </div>
       </header>
