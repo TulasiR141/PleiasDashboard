@@ -177,19 +177,25 @@ namespace ExpertiseFrance.Infrastructure.Repositories
                 var topAgenciesQuery = $@"
                     SELECT TOP 10
                         @YearRange as YearRange,
-                        imd.Agence as Agency,
+                        Agency,
                         @Category as Category,
-                        SUM(CASE WHEN ISNUMERIC(REPLACE(imd.Indirect_Management_Amount, ' ', '')) = 1
+                        SUM(IndirectAmount) as IndirectAmount,
+                        COUNT(DISTINCT FILENAME) as ProjectCount
+                    FROM (
+                        SELECT DISTINCT
+                            p.FILENAME,
+                            imd.Agence as Agency,
+                            CASE WHEN ISNUMERIC(REPLACE(imd.Indirect_Management_Amount, ' ', '')) = 1
                                  THEN CAST(REPLACE(imd.Indirect_Management_Amount, ' ', '') as BIGINT)
-                                 ELSE 0 END) as IndirectAmount,
-                        COUNT(DISTINCT p.FILENAME) as ProjectCount
-                    FROM PROJECTS p
-                    INNER JOIN CAD c ON p.FILENAME = c.FILENAME
-                    INNER JOIN DEPARTMENTS d ON p.FILENAME = d.FILENAME
-                    INNER JOIN Indirect_Management_Data imd ON p.FILENAME = imd.Filename
-                    {whereClause}
-                    AND imd.Agence IS NOT NULL
-                    GROUP BY imd.Agence
+                                 ELSE 0 END as IndirectAmount
+                        FROM PROJECTS p
+                        INNER JOIN CAD c ON p.FILENAME = c.FILENAME
+                        INNER JOIN DEPARTMENTS d ON p.FILENAME = d.FILENAME
+                        INNER JOIN Indirect_Management_Data imd ON p.FILENAME = imd.Filename
+                        {whereClause}
+                        AND imd.Agence IS NOT NULL
+                    ) uniqueAgencyProjects
+                    GROUP BY Agency
                     ORDER BY IndirectAmount DESC";
 
                 var topAgenciesData = await connection.QueryAsync<TopAgencyData>(topAgenciesQuery, parameters);
