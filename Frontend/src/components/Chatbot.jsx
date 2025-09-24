@@ -3,6 +3,40 @@ import { MessageCircle, X, Send, Bot, User, Maximize2, Minimize2, Eye, EyeOff, S
 import "../styles/Chatbot.css";
 import { API_BASE_URL } from '../config/environment';
 
+// Simple markdown to HTML converter (lightweight alternative to react-markdown)
+const parseMarkdown = (text) => {
+    if (!text) return '';
+
+    return text
+        // Headers
+        .replace(/^####### (.*$)/gim, '<h4>$1</h4>')
+        .replace(/^###### (.*$)/gim, '<h4>$1</h4>')
+        .replace(/^##### (.*$)/gim, '<h4>$1</h4>')
+        .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
+        .replace(/^### (.*$)/gim, '<h4>$1</h4>')
+        .replace(/^## (.*$)/gim, '<h4>$1</h4>')
+        .replace(/^# (.*$)/gim, '<h4>$1</h4>')
+        // Bold
+        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+        .replace(/__(.*?)__/gim, '<strong>$1</strong>')
+        // Italic
+        .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+        .replace(/_(.*?)_/gim, '<em>$1</em>')
+        // Code blocks
+        .replace(/```([\s\S]*?)```/gim, '<pre><code>$1</code></pre>')
+        // Inline code
+        .replace(/`(.*?)`/gim, '<code>$1</code>')
+        // Line breaks
+        .replace(/\n\n/gim, '</p><p>')
+        // Wrap in paragraphs
+        .replace(/^(.*)$/gim, '<p>$1</p>')
+        // Clean up empty paragraphs
+        .replace(/<p><\/p>/gim, '')
+        // Fix nested paragraphs in headers
+        .replace(/<p>(<h[1-6]>.*?<\/h[1-6]>)<\/p>/gim, '$1')
+        .replace(/<p>(<pre>.*?<\/pre>)<\/p>/gim, '$1');
+};
+
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -19,7 +53,9 @@ const Chatbot = () => {
     const [showAnalysis, setShowAnalysis] = useState(false);
     const [analysisData, setAnalysisData] = useState(null);
     const [expandedSources, setExpandedSources] = useState(new Set());
-    const [username, setUsername] = useState('user'); // You can make this configurable
+    const [username, setUsername] = useState('user');
+    const [hoveredRef, setHoveredRef] = useState(null);
+    const [refPosition, setRefPosition] = useState({ x: 0, y: 0 });
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -30,13 +66,48 @@ const Chatbot = () => {
         scrollToBottom();
     }, [messages]);
 
-    // Function to clean text but preserve HTML formatting tags
-    const cleanResponseText = (text) => {
-        if (!text) return '';
+    // Function to extract and process references from text
+    const processReferences = (text) => {
+        if (!text) return { processedText: '', references: {} };
 
-        // Remove specific unwanted tags
-        let cleanedText = text.replace(/<ref[^>]*>.*?<\/ref>/gi, '');
-        cleanedText = cleanedText.replace(/<ref[^>]*>/gi, '');
+        const references = {};
+        let orderCounter = 0;
+
+        console.log('Original text:', text); // Debug log
+
+        // Replace ref tags with clickable reference numbers and store by order
+        const processedText = text.replace(
+            /<ref\s+name="([^"]+)"[^>]*>([\s\S]*?)<\/ref>/gi,
+            (match, refNumber, refContent) => {
+                orderCounter++;
+                let refContentTrimmed = refContent.trim();
+
+                // Remove "From Source X--" prefix from content
+                refContentTrimmed = refContentTrimmed.replace(/^From Source \d+--\s*/i, '');
+
+                // Store reference by order number, not name attribute
+                references[orderCounter] = refContentTrimmed;
+                console.log(`Reference ${orderCounter} (name="${refNumber}"):`, refContentTrimmed);
+
+                // Use name attribute for display but order number for data lookup
+                const escapedRefNumber = refNumber.replace(/"/g, '&quot;');
+                return `<span class="reference-link" data-ref="${orderCounter}" data-display="${refNumber}">[${refNumber}]</span>`;
+            }
+        );
+
+        console.log('Final extracted references by order:', references); // Debug log
+        return { processedText, references };
+    };
+
+    // Function to clean text but preserve HTML formatting tags and process references
+    const cleanResponseText = (text) => {
+        if (!text) return { cleanedText: '', references: {} };
+
+        // First process references
+        const { processedText, references } = processReferences(text);
+
+        // Remove other unwanted patterns but keep ref processing
+        let cleanedText = processedText;
 
         // Remove any <|anything|> pattern tags (generalized)
         cleanedText = cleanedText.replace(/<\|[^|]*\|>/gi, '');
@@ -51,12 +122,105 @@ const Chatbot = () => {
         // Clean up extra whitespace but preserve line breaks
         cleanedText = cleanedText.replace(/[ \t]+/g, ' ').trim();
 
-        return cleanedText;
+        return { cleanedText, references };
     };
 
-    // Function to render HTML content safely
-    const renderHTMLContent = (htmlString) => {
-        return <div dangerouslySetInnerHTML={{ __html: htmlString }} />;
+    // Simplified reference hover handlers - immediate show/hide
+    const handleRefHover = (event, orderNumber, references) => {
+        if (references && references[orderNumber]) {
+            const rect = event.target.getBoundingClientRect();
+            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            // Get the display name from data-display attribute
+            const displayName = event.target.getAttribute('data-display') || orderNumber;
+
+            setRefPosition({
+                x: rect.left + scrollLeft + rect.width / 2,
+                y: rect.top + scrollTop - 10
+            });
+
+            setHoveredRef({
+                number: displayName, // Use display name for UI (shows as "Source X")
+                content: references[orderNumber] // Use order number for content lookup
+            });
+        }
+    };
+
+    const handleRefLeave = () => {
+        // Immediate hide - no timers
+        setHoveredRef(null);
+    };
+
+
+
+    // Enhanced component to render HTML content with reference handling
+    const ReferenceAwareContent = ({ htmlString, references }) => {
+        useEffect(() => {
+            // Add global event handlers for reference hovering with proper cleanup
+            const handleGlobalRefHover = (event, refNumber) => {
+                handleRefHover(event, refNumber, references);
+            };
+
+            const handleGlobalRefLeave = () => {
+                handleRefLeave();
+            };
+
+            // Attach to window for access from dangerouslySetInnerHTML
+            window.handleRefHover = handleGlobalRefHover;
+            window.handleRefLeave = handleGlobalRefLeave;
+
+            // Also add direct event listeners to all reference links for more reliable event handling
+            const refLinks = document.querySelectorAll('.reference-link');
+
+            const addEventListeners = () => {
+                refLinks.forEach(link => {
+                    const refNumber = link.getAttribute('data-ref');
+
+                    const hoverHandler = (e) => {
+                        e.stopPropagation();
+                        handleRefHover(e, refNumber, references);
+                    };
+
+                    const leaveHandler = (e) => {
+                        e.stopPropagation();
+                        handleRefLeave();
+                    };
+
+                    link.addEventListener('mouseenter', hoverHandler);
+                    link.addEventListener('mouseleave', leaveHandler);
+
+                    // Store handlers for cleanup
+                    link._hoverHandler = hoverHandler;
+                    link._leaveHandler = leaveHandler;
+                });
+            };
+
+            // Add listeners after a small delay to ensure DOM is ready
+            setTimeout(addEventListeners, 100);
+
+            return () => {
+                // Cleanup
+                refLinks.forEach(link => {
+                    if (link._hoverHandler) {
+                        link.removeEventListener('mouseenter', link._hoverHandler);
+                    }
+                    if (link._leaveHandler) {
+                        link.removeEventListener('mouseleave', link._leaveHandler);
+                    }
+                });
+
+                delete window.handleRefHover;
+                delete window.handleRefLeave;
+            };
+        }, [references]);
+
+        return (
+            <div
+                dangerouslySetInnerHTML={{ __html: htmlString }}
+                className="message-content-with-references"
+            />
+        );
     };
 
     // API call function
@@ -103,21 +267,22 @@ const Chatbot = () => {
         try {
             // Call the API
             const apiResponse = await callChatAPI(currentQuery);
-            
-            // Extract the answer from parsed_sections or use generated_text as fallback
-            const botResponseText = apiResponse.parsed_sections?.answer || 
-                                  apiResponse.generated_text || 
-                                  "I apologize, but I couldn't generate a proper response at the moment.";
 
-            // Clean and format the response
-            const cleanedResponse = cleanResponseText(botResponseText);
+            // Extract the answer from parsed_sections or use generated_text as fallback
+            const botResponseText = apiResponse.parsed_sections?.answer ||
+                apiResponse.generated_text ||
+                "I apologize, but I couldn't generate a proper response at the moment.";
+
+            // Clean and format the response, extracting references
+            const { cleanedText: cleanedResponse, references } = cleanResponseText(botResponseText);
 
             const botResponse = {
                 id: messages.length + 2,
                 text: cleanedResponse,
                 sender: 'bot',
                 timestamp: new Date(),
-                apiData: apiResponse // Store the full API response for analysis panel
+                apiData: apiResponse,
+                references: references // Store references with the message
             };
 
             // Prepare analysis data from API response
@@ -126,7 +291,8 @@ const Chatbot = () => {
                     title: `Source ${index + 1}`,
                     url: url,
                     content: `Reference source for your query about: "${currentQuery}"`,
-                    content_preview: `Source URL: ${url}`
+                    content_preview: `Source URL: ${url}`,
+                    chunk_content: apiResponse.source_chunks ? apiResponse.source_chunks[index] : null
                 }));
 
                 setAnalysisData({
@@ -148,16 +314,18 @@ const Chatbot = () => {
 
         } catch (error) {
             console.error('Error calling API:', error);
-            
+
             // Fallback to original logic if API fails
             const fallbackResponse = await getBotResponse(currentQuery);
+            const { cleanedText, references } = cleanResponseText(fallbackResponse);
             const botResponse = {
                 id: messages.length + 2,
-                text: fallbackResponse || "I'm sorry, I'm experiencing some technical difficulties. Please try again later.",
+                text: cleanedText || "I'm sorry, I'm experiencing some technical difficulties. Please try again later.",
                 sender: 'bot',
-                timestamp: new Date()
+                timestamp: new Date(),
+                references: references
             };
-            
+
             setMessages(prev => [...prev, botResponse]);
             setIsTyping(false);
         }
@@ -236,8 +404,8 @@ const Chatbot = () => {
                                 No data sources available for this message
                             </div>
                         ) : (
-                            <div>
-                               
+                                <div>
+
                                 {/* Sources Section */}
                                 {analysisData.sources && analysisData.sources.length > 0 && (
                                     <div className="analysis-section">
@@ -245,8 +413,10 @@ const Chatbot = () => {
                                         {analysisData.sources.map((source, index) => {
                                             const isExpanded = expandedSources.has(index);
                                             const hasPreview = source.content_preview;
-                                            const displayContent = hasPreview ? source.content_preview :
-                                                (source.content ? source.content.substring(0, 150) + '...' : 'No content available');
+                                            const hasChunk = source.chunk_content;
+                                            const displayContent = hasChunk ? source.chunk_content :
+                                                (hasPreview ? source.content_preview :
+                                                    (source.content ? source.content.substring(0, 150) + '...' : 'No content available'));
 
                                             return (
                                                 <div key={index} className="source-item">
@@ -274,10 +444,15 @@ const Chatbot = () => {
                                                                 </a>
                                                             </div>
                                                         )}
-                                                        {isExpanded ?
-                                                            source.content || 'No content available' :
-                                                            displayContent
-                                                        }
+                                                        <div
+                                                            dangerouslySetInnerHTML={{
+                                                                __html: parseMarkdown(isExpanded ?
+                                                                    displayContent :
+                                                                    (displayContent.length > 150 ? displayContent.substring(0, 150) + '...' : displayContent)
+                                                                )
+                                                            }}
+                                                            className="source-markdown-content"
+                                                        />
                                                     </div>
                                                 </div>
                                             );
@@ -305,7 +480,10 @@ const Chatbot = () => {
                     <div className="chatbot-message-content">
                         <div className={`chatbot-bubble ${message.sender}`}>
                             {message.sender === 'bot' ?
-                                renderHTMLContent(message.text) :
+                                <ReferenceAwareContent
+                                    htmlString={message.text}
+                                    references={message.references || {}}
+                                /> :
                                 message.text
                             }
                         </div>
@@ -369,6 +547,29 @@ const Chatbot = () => {
         </div>
     );
 
+    // Simplified reference tooltip component - immediate show/hide
+    const ReferenceTooltip = () => {
+        if (!hoveredRef) return null;
+
+        return (
+            <div
+                className="reference-tooltip visible"
+                style={{
+                    position: 'fixed',
+                    left: refPosition.x,
+                    top: refPosition.y,
+                    transform: 'translateX(-50%) translateY(-100%)',
+                    zIndex: 10001,
+                }}
+            >
+                <div className="reference-tooltip-content">
+                    <div className="reference-tooltip-number">Source {hoveredRef.number}</div>
+                    <div className="reference-tooltip-text">{hoveredRef.content}</div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="chatbot-container">
             {isExpanded && (
@@ -427,6 +628,7 @@ const Chatbot = () => {
                     </div>
                 </div>
             )}
+            <ReferenceTooltip />
         </div>
     );
 };
